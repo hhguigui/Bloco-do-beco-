@@ -1,0 +1,378 @@
+{
+  "project_name": "Bloco do Beco - Mapeamento Cultural do Jardim Ibirapuera",
+  "persona_and_concept": {
+    "identity": "E1 Anti-AI Design: Vibrant Brazilian Community Artistry + Swiss Typography Clarity + Tactical Street Culture Cartography",
+    "cultural_context": "Bloco do Beco is a legendary grassroots cultural collective in Jardim Ibirapuera (Zona Sul de São Paulo, Brazil). The design blends warm terracotta, sun yellow, rich açai violet, vibrant leaf green, and deep obsidian with crisp editorial layout and accessible community metrics.",
+    "emotional_tone": "Warm, celebrating community pride, creative vitality, empowering local artists and craftspeople (músicos, costureiras, artesãos, grafiteiros, dançarinos), highly functional, community-driven."
+  },
+  "colors": {
+    "surfaces": [
+      {
+        "name": "page",
+        "kind": "solid",
+        "bg": "#FDFBF7",
+        "on_bg": "#18181B",
+        "on_bg_muted": "#52525B"
+      },
+      {
+        "name": "panel",
+        "kind": "solid",
+        "bg": "#FFFFFF",
+        "on_bg": "#18181B",
+        "on_bg_muted": "#52525B"
+      },
+      {
+        "name": "card_elevated",
+        "kind": "solid",
+        "bg": "#FAF5EE",
+        "on_bg": "#18181B",
+        "on_bg_muted": "#52525B"
+      },
+      {
+        "name": "inverse",
+        "kind": "solid",
+        "bg": "#121214",
+        "on_bg": "#F4F4F5",
+        "on_bg_muted": "#A1A1AA"
+      },
+      {
+        "name": "hero",
+        "kind": "gradient",
+        "contrast_against": "#26130B",
+        "guarantee": "scrim: linear-gradient(135deg, rgba(24,18,14,0.92) 0%, rgba(46,26,16,0.85) 60%, rgba(20,15,12,0.95) 100%)",
+        "on_bg": "#FFF8F0",
+        "on_bg_muted": "#F3D5B5",
+        "roles": {
+          "link": "#FACC15",
+          "error": "#FCA5A5",
+          "success": "#86EFAC"
+        }
+      },
+      {
+        "name": "badge_musica",
+        "kind": "solid",
+        "bg": "#FEF3C7",
+        "on_bg": "#92400E",
+        "on_bg_muted": "#78350F"
+      },
+      {
+        "name": "badge_costura",
+        "kind": "solid",
+        "bg": "#FCE7F3",
+        "on_bg": "#9D174D",
+        "on_bg_muted": "#831843"
+      },
+      {
+        "name": "badge_artesanato",
+        "kind": "solid",
+        "bg": "#FFEDD5",
+        "on_bg": "#9A3412",
+        "on_bg_muted": "#7C2D12"
+      },
+      {
+        "name": "badge_artes_visuais",
+        "kind": "solid",
+        "bg": "#DCFCE7",
+        "on_bg": "#166534",
+        "on_bg_muted": "#14532D"
+      },
+      {
+        "name": "badge_danca_teatro",
+        "kind": "solid",
+        "bg": "#EDE9FE",
+        "on_bg": "#5B21B6",
+        "on_bg_muted": "#4C1D95"
+      },
+      {
+        "name": "badge_gastronomia",
+        "kind": "solid",
+        "bg": "#FEE2E2",
+        "on_bg": "#991B1B",
+        "on_bg_muted": "#7F1D1D"
+      }
+    ],
+    "accent": "#E65100",
+    "on_accent": "#FFFFFF",
+    "secondary_accent": "#0D9488",
+    "on_secondary_accent": "#FFFFFF",
+    "chart_palette": [
+      "#E65100",
+      "#0D9488",
+      "#D97706",
+      "#7C3AED",
+      "#E11D48",
+      "#0284C7",
+      "#16A34A"
+    ]
+  },
+  "typography": {
+    "font_heading": "'Plus Jakarta Sans', sans-serif",
+    "font_body": "'DM Sans', sans-serif",
+    "font_mono": "'IBM Plex Mono', monospace",
+    "css_import": "@import \"@fontsource-variable/plus-jakarta-sans\";\n@import \"@fontsource-variable/dm-sans\";\n@import \"@fontsource/ibm-plex-mono\";",
+    "scale_px": {
+      "display": 56,
+      "h1": 44,
+      "h2": 32,
+      "h3": 22,
+      "body": 16,
+      "caption": 14
+    },
+    "rules": {
+      "headings": "font-heading font-extrabold tracking-tight leading-tight",
+      "subheadings": "font-heading font-semibold tracking-normal text-muted-foreground",
+      "labels": "font-mono uppercase text-xs tracking-wider",
+      "body": "font-sans text-base leading-relaxed"
+    }
+  },
+  "entry_surfaces": {
+    "/": "split hero — brand banner + interactive stats snapshot left, real-time interactive Jardim Ibirapuera talent map preview right",
+    "/talentos": "editorial directory grid — search + multi-category filter bar top, profile cards bento grid below",
+    "/talento/:id": "immersive artist dossier — hero with gallery + bio left, activities/contact/map geoloc card right",
+    "/atividades": "community connection hub — filterable list of workshops, courses, and artistic services in Jardim Ibirapuera",
+    "/mapa": "full-canvas tactical map of Jardim Ibirapuera with interactive category pins, search box and artist summary drawer",
+    "/painel-dados": "high-density analytics command center — metric summary cards, recharts category breakdowns, gender, age, years of experience",
+    "/cadastrar": "branded talent registration flow — multi-step form with photo upload, coordinates/address geocoding, activities list",
+    "/admin": "password-protected management portal — quick stat counts, search & filter artist table with edit/delete modals"
+  },
+  "layout_and_navigation": {
+    "header": {
+      "type": "Crystal Glass Sticky Header",
+      "classes": "sticky top-0 z-50 bg-[#FDFBF7]/90 dark:bg-[#121214]/90 backdrop-blur-md border-b border-amber-900/10 dark:border-white/10 px-4 sm:px-8 py-3.5 transition-all",
+      "links": [
+        { "label": "Início", "path": "/", "test_id": "nav-link-home" },
+        { "label": "Mapa de Talentos", "path": "/mapa", "test_id": "nav-link-mapa" },
+        { "label": "Catálogo", "path": "/talentos", "test_id": "nav-link-talentos" },
+        { "label": "Atividades no Bairro", "path": "/atividades", "test_id": "nav-link-atividades" },
+        { "label": "Painel de Dados", "path": "/painel-dados", "test_id": "nav-link-painel-dados" }
+      ],
+      "actions": [
+        {
+          "label": "+ Cadastrar Talento",
+          "path": "/cadastrar",
+          "variant": "default",
+          "test_id": "nav-btn-cadastrar",
+          "classes": "bg-[#E65100] hover:bg-[#C2410C] text-white font-medium shadow-sm transition-all"
+        },
+        {
+          "label": "Área Admin",
+          "path": "/admin",
+          "variant": "outline",
+          "test_id": "nav-btn-admin",
+          "classes": "border-stone-300 hover:bg-stone-100 text-stone-800 text-sm font-medium"
+        }
+      ]
+    },
+    "footer": {
+      "type": "Deep Dark Earth Footer with Massive Brand Impact",
+      "classes": "bg-[#141210] text-[#EDE8E1] border-t border-amber-950 pt-16 pb-12 px-4 sm:px-8",
+      "content": "Bloco do Beco — Fortalecendo a cultura periférica no Jardim Ibirapuera, São Paulo - SP.",
+      "quick_links": ["Sobre o Bloco", "Cadastrar Artista", "Transparência de Dados", "Fale Conosco"],
+      "social_links": ["Instagram @blocodobeco", "WhatsApp Comunitário"]
+    }
+  },
+  "image_urls": {
+    "hero_banner": {
+      "category": "hero",
+      "url": "https://images.unsplash.com/photo-1759352430310-275503e7df4a?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzl8MHwxfHNlYXJjaHwyfHxzYW1iYSUyMG11c2ljaWFuJTIwZHJ1bSUyMGJyYXppbGlhbnxlbnwwfHx8fDE3OTE1NTY3MDJ8MA&ixlib=rb-4.1.0&q=85",
+      "alt": "Músicos tocando tambor e instrumentos ao ar livre na comunidade",
+      "description": "Hero background for Bloco do Beco community showcase"
+    },
+    "musicians": [
+      {
+        "id": "mus-1",
+        "name": "Mestre Tião do Pandeiro",
+        "category": "Música & Percussão",
+        "url": "https://images.unsplash.com/photo-1779037805855-678303df4b94?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzl8MHwxfHNlYXJjaHwzfHxzYW1iYSUyMG11c2ljaWFuJTIwZHJ1bSUyMGJyYXppbGlhbnxlbnwwfHx8fDE3OTE1NTY3MDJ8MA&ixlib=rb-4.1.0&q=85",
+        "alt": "Músicos tocando pratos e tambores com chapéus tradicionais"
+      },
+      {
+        "id": "mus-2",
+        "name": "Dona Jurema do Samba",
+        "category": "Música & Percussão",
+        "url": "https://images.unsplash.com/photo-1637424623492-44667dea7394?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzl8MHwxfHNlYXJjaHwxfHxzYW1iYSUyMG11c2ljaWFuJTIwZHJ1bSUyMGJyYXppbGlhbnxlbnwwfHx8fDE3OTE1NTY3MDJ8MA&ixlib=rb-4.1.0&q=85",
+        "alt": "Grupo cultural e músicos da comunidade em celebração"
+      },
+      {
+        "id": "mus-3",
+        "name": "Lucas da Roda de Capoeira e Berimbau",
+        "category": "Música & Percussão",
+        "url": "https://images.unsplash.com/photo-1759352447652-dfedcece14c9?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzl8MHwxfHNlYXJjaHw0fHxzYW1iYSUyMG11c2ljaWFuJTIwZHJ1bSUyMGJyYXppbGlhbnxlbnwwfHx8fDE3OTE1NTY3MDJ8MA&ixlib=rb-4.1.0&q=85",
+        "alt": "Músico tocando berimbau em atividade coletiva"
+      }
+    ],
+    "seamstresses": [
+      {
+        "id": "seam-1",
+        "name": "Dona Neuza Costuras & Figurinos",
+        "category": "Costura & Moda Popular",
+        "url": "https://images.unsplash.com/photo-1641320197434-6ae0ca235048?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxOTJ8MHwxfHNlYXJjaHw0fHxzZWFtc3RyZXNzJTIwdGFpbG9yJTIwc2V3aW5nJTIwaGFuZG1hZGV8ZW58MHx8fHwxNzkxNTU2NzAyfDA&ixlib=rb-4.1.0&q=85",
+        "alt": "Costureira operando máquina de costura em tecido fino"
+      },
+      {
+        "id": "seam-2",
+        "name": "Ateliê Retalhos do Beco (Cláudia e filhas)",
+        "category": "Costura & Moda Popular",
+        "url": "https://images.unsplash.com/photo-1606501126768-b78d4569d3f9?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxOTJ8MHwxfHNlYXJjaHwyfHxzZWFtc3RyZXNzJTIwdGFpbG9yJTIwc2V3aW5nJTIwaGFuZG1hZGV8ZW58MHx8fHwxNzkxNTU2NzAyfDA&ixlib=rb-4.1.0&q=85",
+        "alt": "Profissional costurando detalhes artesanais"
+      },
+      {
+        "id": "seam-3",
+        "name": "Oficina Linhas e Tramas",
+        "category": "Costura & Moda Popular",
+        "url": "https://images.unsplash.com/photo-1578353022142-09264fd64295?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxOTJ8MHwxfHNlYXJjaHwxfHxzZWFtc3RyZXNzJTIwdGFpbG9yJTIwc2V3aW5nJTIwaGFuZG1hZGV8ZW58MHx8fHwxNzkxNTU2NzAyfDA&ixlib=rb-4.1.0&q=85",
+        "alt": "Carretéis de linha coloridos, tesouras de alfaiataria e aviamentos"
+      }
+    ],
+    "artisans": [
+      {
+        "id": "art-1",
+        "name": "Seu Zé Cerâmica & Argila",
+        "category": "Artesanato & Escultura",
+        "url": "https://images.unsplash.com/photo-1595351298020-038700609878?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NzV8MHwxfHNlYXJjaHwxfHxhcnRpc2FuJTIwcG90dGVyeSUyMGhhbmRtYWRlJTIwY3JhZnR8ZW58MHx8fHwxNzkxNTU2NzAyfDA&ixlib=rb-4.1.0&q=85",
+        "alt": "Artesão moldando vaso de argila no torno"
+      },
+      {
+        "id": "art-2",
+        "name": "Mariana Esculturas em Barro",
+        "category": "Artesanato & Escultura",
+        "url": "https://images.unsplash.com/photo-1590605095243-072811dbe64c?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NzV8MHwxfHNlYXJjaHwzfHxhcnRpc2FuJTIwcG90dGVyeSUyMGhhbmRtYWRlJTIwY3JhZnR8ZW58MHx8fHwxNzkxNTU2NzAyfDA&ixlib=rb-4.1.0&q=85",
+        "alt": "Artesã segurando peça de cerâmica artesanal finalizada"
+      },
+      {
+        "id": "art-3",
+        "name": "Oficina Barbotina Comunitária",
+        "category": "Artesanato & Escultura",
+        "url": "https://images.unsplash.com/photo-1609881583302-61548332039c?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NzV8MHwxfHNlYXJjaHwyfHxhcnRpc2FuJTIwcG90dGVyeSUyMGhhbmRtYWRlJTIwY3JhZnR8ZW58MHx8fHwxNzkxNTU2NzAyfDA&ixlib=rb-4.1.0&q=85",
+        "alt": "Processo manual de cerâmica no torno em ateliê"
+      }
+    ]
+  },
+  "map_specification": {
+    "library": "leaflet & react-leaflet",
+    "install_command": "yarn add leaflet @types/leaflet",
+    "center_coordinates": [-23.6668, -46.7385],
+    "default_zoom": 15,
+    "neighborhood": "Jardim Ibirapuera, São Paulo - SP, Brasil",
+    "tile_layer": {
+      "url": "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+      "attribution": "&copy; <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a> contributors"
+    },
+    "custom_category_markers": {
+      "Música & Percussão": { "color": "#E65100", "icon": "Music" },
+      "Costura & Moda Popular": { "color": "#BE185D", "icon": "Scissors" },
+      "Artesanato & Escultura": { "color": "#C2410C", "icon": "Hammer" },
+      "Artes Visuais & Grafite": { "color": "#047857", "icon": "Palette" },
+      "Dança & Artes Cênicas": { "color": "#6D28D9", "icon": "Sparkles" },
+      "Gastronomia Tradicional": { "color": "#B91C1C", "icon": "Utensils" }
+    }
+  },
+  "dashboard_metrics_specification": {
+    "chart_library": "recharts",
+    "metrics": [
+      {
+        "id": "total_talents",
+        "label": "Talentos Mapeados",
+        "type": "summary_counter",
+        "accent": "terracotta"
+      },
+      {
+        "id": "categories_distribution",
+        "label": "Talentos por Categoria",
+        "type": "BarChart or DonutChart",
+        "dimensions": ["Música", "Costura", "Artesanato", "Artes Visuais", "Dança & Teatro", "Gastronomia"]
+      },
+      {
+        "id": "age_ranges",
+        "label": "Faixa Etária dos Artistas",
+        "type": "BarChart",
+        "ranges": ["15-24 anos", "25-34 anos", "35-49 anos", "50-64 anos", "65+ anos"]
+      },
+      {
+        "id": "gender_distribution",
+        "label": "Distribuição de Gênero",
+        "type": "PieChart",
+        "slices": ["Mulheres (cis e trans)", "Homens (cis e trans)", "Não-binário / Outros", "Prefere não informar"]
+      },
+      {
+        "id": "years_of_experience",
+        "label": "Tempo de Atuação no Território",
+        "type": "BarChart",
+        "ranges": ["Menos de 2 anos", "2 a 5 anos", "5 a 10 anos", "10 a 20 anos", "Mais de 20 anos (Mestres)"]
+      },
+      {
+        "id": "activities_offered",
+        "label": "Atividades Oferecidas à Comunidade",
+        "type": "summary_counter",
+        "sublabel": "Oficinas, Aulas, Encomendas e Apresentações"
+      }
+    ]
+  },
+  "activities_hub_specification": {
+    "purpose": "Conectar moradores e visitantes diretamente com as atividades oferecidas pelos talentos no bairro",
+    "activity_types": [
+      { "id": "oficina", "name": "Oficina / Workshop" },
+      { "id": "aula", "name": "Aulas Regulares (Música, Costura, Pintura)" },
+      { "id": "servico", "name": "Serviços & Encomendas Sob Medida" },
+      { "id": "evento", "name": "Apresentações & Rodas Culturais" }
+    ],
+    "interactive_features": [
+      "Filtro por tipo de atividade e categoria artística",
+      "Botão direto 'Falar no WhatsApp com o Artista'",
+      "Localização e dias/horários no Jardim Ibirapuera",
+      "Indicação de gratuidade ou valor social comunitário"
+    ]
+  },
+  "component_hierarchy": [
+    {
+      "path": "frontend/src/pages/Home.tsx",
+      "purpose": "Hero impressionante do Bloco do Beco + Métricas de Impacto + Mapa Rápido + Destaques de Talentos e Atividades"
+    },
+    {
+      "path": "frontend/src/pages/Talents.tsx",
+      "purpose": "Catálogo completo com busca em tempo real, filtros por categoria, tags de habilidades, ordenação e cards bento ricos"
+    },
+    {
+      "path": "frontend/src/pages/TalentDetail.tsx",
+      "purpose": "Perfil detalhado do artista com foto, biografia, galeria de trabalhos, lista de atividades no bairro, endereço no mapa e contato WhatsApp/Instagram"
+    },
+    {
+      "path": "frontend/src/pages/Activities.tsx",
+      "purpose": "Mural de conexões comunitárias: oficinas, aulas de costura, rodas de samba, aulas de cerâmica e serviços sob encomenda"
+    },
+    {
+      "path": "frontend/src/pages/TalentMap.tsx",
+      "purpose": "Mapa em tela cheia do Jardim Ibirapuera com pins coloridos por segmento, filtro interativo e drawer de detalhes do talento"
+    },
+    {
+      "path": "frontend/src/pages/DataDashboard.tsx",
+      "purpose": "Painel de métricas e indicadores culturais com gráficos Recharts acessíveis, filtros e opção de exportação dos dados"
+    },
+    {
+      "path": "frontend/src/pages/RegisterTalent.tsx",
+      "purpose": "Formulário amigável de auto-cadastro para artistas do bairro, upload de imagem, preenchimento de endereço e cadastro de atividades"
+    },
+    {
+      "path": "frontend/src/pages/AdminPanel.tsx",
+      "purpose": "Painel administrativo protegido por senha com gestão de talentos cadastrados (aprovar, editar, excluir, exportar dados)"
+    }
+  ],
+  "accessibility_and_motion": {
+    "contrast_standard": "APCA & WCAG AA 4.5:1 on all text surfaces",
+    "motion_library": "motion (from 'motion/react')",
+    "motion_scale": "Subtle stagger for cards (0.05s step), smooth hover lift (-2px with crisp box-shadow), modal ease-out 180ms",
+    "reduced_motion": "Wrap animations with prefers-reduced-motion media query",
+    "keyboard_nav": "Full tab indices on custom map popups, search filters and modal forms"
+  },
+  "instructions_to_main_agent": [
+    "Install 'leaflet' and '@types/leaflet' in frontend via `yarn add leaflet @types/leaflet` before rendering the map component.",
+    "Import Leaflet CSS in main or component: `import 'leaflet/dist/leaflet.css';`",
+    "Fix standard Leaflet default icon URL paths if needed or use custom SVGs with Lucide icons for category-colored pins.",
+    "Ensure all data charts in `/painel-dados` use Recharts with colors matching the theme palette (#E65100, #0D9488, #D97706, #7C3AED, #E11D48, #0284C7).",
+    "Pre-populate MongoDB with at least 10 high-quality seed talents in Jardim Ibirapuera (SP) with realistic addresses (e.g. Rua Inácio Dias, Rua Teresa Carreño, Av. Guido Caloi, Rua José Manoel Camisa Nova, etc.) and complete coordinates.",
+    "Include activities for talents so the 'Atividades no Bairro' tab is richly populated with active community workshops, sewing classes, pottery courses and samba rehearsals.",
+    "Implement the public registration flow with instant feedback via Sonner toast and auto-geocoding (or coordinate assignment based on street name) in Jardim Ibirapuera.",
+    "Implement the admin portal with a clean password modal or simple auth token so administrators of Bloco do Beco can moderate entries.",
+    "Ensure all buttons, inputs, links, filters, map controls, and stats cards include role-based `data-testid` attributes."
+  ]
+}
