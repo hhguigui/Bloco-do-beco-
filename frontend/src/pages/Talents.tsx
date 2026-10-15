@@ -13,9 +13,9 @@ import type { Talent } from "@/lib/types";
 
 const FACETS: Facet<Talent>[] = [
   { id: "category", label: "Categoria", get: (t) => t.category, labels: CATEGORY_LABELS, allLabel: "Todas" },
-  { id: "specialty", label: "Especialidade", get: (t) => t.specialty, allLabel: "Todas" },
-  { id: "experience", label: "Tempo de atuação", get: (t) => t.experience, labels: EXPERIENCE_LABELS },
-  { id: "age", label: "Faixa etária", get: (t) => t.age_range, labels: AGE_LABELS, allLabel: "Todas" },
+  { id: "specialty", label: "Tipo", get: (t) => t.specialty, allLabel: "Todas" },
+  { id: "experience", label: "Valor", get: (t) => t.experience, labels: EXPERIENCE_LABELS },
+  { id: "age", label: "Talento", get: (t) => t.age_range, labels: AGE_LABELS, allLabel: "Todas" },
 ];
 
 export default function Talents() {
@@ -38,7 +38,7 @@ export default function Talents() {
     <div className="mx-auto max-w-7xl px-4 py-12 sm:px-8">
       <p className="font-mono text-xs uppercase tracking-[0.2em] text-[#C2410C]">Catálogo</p>
       <h1 className="mt-2 font-heading text-4xl font-extrabold tracking-tight sm:text-5xl">Talentos do Jardim Ibirapuera</h1>
-      <p className="mt-3 max-w-2xl text-stone-600">Busque por nome ou atividade e refine em cascata: categoria → especialidade → tempo de atuação → idade.</p>
+      <p className="mt-3 max-w-2xl text-stone-600">Busque por nome ou atividade e refine em cascata: categoria → tipo → valor → talento.</p>
 
       <div className="sticky top-[65px] z-30 -mx-4 mt-8 space-y-4 border-b border-amber-900/10 bg-[#FDFBF7]/90 px-4 py-4 backdrop-blur sm:-mx-8 sm:px-8">
         <div className="relative max-w-xl">

@@ -26,7 +26,6 @@ export default function App() {
         <Route path="/mapa" element={<MapPage />} />
         <Route path="/cadastrar" element={<Register />} />
         <Route path="/meus-perfis" element={<MyProfiles />} />
-        <Route path="/admin" element={<Admin />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
