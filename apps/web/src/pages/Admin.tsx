@@ -11,7 +11,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AdminDashboard from "@/components/AdminDashboard";
 import CategoryBadge from "@/components/CategoryBadge";
-import { GoogleButton } from "@/components/GoogleSignInCard";
 import StatusBadge from "@/components/StatusBadge";
 import TalentForm from "@/components/TalentForm";
 import { apiDelete, apiGet, apiPatch, apiPost, apiPut, errorMessage } from "@/lib/api";
@@ -60,8 +59,6 @@ function LoginCard({ me }: { me?: Me }) {
             {me.user.email} não tem acesso de administrador.
           </p>
         )}
-        <div className="mt-6"><GoogleButton returnPath="/admin" label="Entrar com Google (equipe)" testId="admin-google-signin-button" /></div>
-        <div className="my-5 flex items-center gap-3 text-xs uppercase tracking-wider text-stone-400"><span className="h-px flex-1 bg-stone-200" />ou senha<span className="h-px flex-1 bg-stone-200" /></div>
         <form onSubmit={(e) => { e.preventDefault(); if (password) login.mutate(); }} data-testid="admin-login-form">
           <Label htmlFor="admin-password">Senha</Label>
           <Input id="admin-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} data-testid="admin-password-input" className="mt-2 bg-white" />
@@ -150,10 +147,7 @@ export default function Admin() {
           <h1 className="mt-2 font-heading text-4xl font-extrabold tracking-tight">Painel do Bloco do Beco</h1>
           <p className="mt-1 text-stone-600" data-testid="admin-total-count">{all.length} perfis · {pending.length} aguardando aprovação</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => exportCsv(all)} data-testid="admin-export-csv-button"><Download className="size-4" /> Exportar CSV</Button>
-          <Button variant="ghost" onClick={() => void endSession("/admin")} data-testid="admin-logout-button"><LogOut className="size-4" /> Sair</Button>
-        </div>
+       
       </div>
 
       <Tabs value={tab} onValueChange={(v) => setTab(String(v))} className="mt-8">

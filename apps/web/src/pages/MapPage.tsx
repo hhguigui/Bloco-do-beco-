@@ -14,9 +14,9 @@ import { cn } from "@/lib/utils";
 
 const FACETS: Facet<Talent>[] = [
   { id: "category", label: "Categoria", get: (t) => t.category, labels: CATEGORY_LABELS, allLabel: "Todas" },
-  { id: "specialty", label: "Especialidade", get: (t) => t.specialty, allLabel: "Todas" },
-  { id: "activity", label: "Oferece", get: (t) => t.activities.map((a) => a.type), labels: ACTIVITY_LABELS, allLabel: "Qualquer" },
-  { id: "experience", label: "Tempo de atuação", get: (t) => t.experience, labels: EXPERIENCE_LABELS },
+  { id: "specialty", label: "Tipo", get: (t) => t.specialty, allLabel: "Todas" },
+  { id: "activity", label: "Valor", get: (t) => t.activities.map((a) => a.type), labels: ACTIVITY_LABELS, allLabel: "Qualquer" },
+  { id: "experience", label: "Talento", get: (t) => t.experience, labels: EXPERIENCE_LABELS },
 ];
 
 export default function MapPage() {
