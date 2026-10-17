@@ -1,0 +1,1 @@
+{"kind":"crash","note":"","url":"/perfil","viewport":{"w":1536,"h":730},"error":{"kind":"runtime","message":"Failed to reload /src/components/Layout.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above)","file":"src/components/Layout.tsx","stack":null,"frame":null},"recorder":"off","captured_at":"2026-10-17T17:53:33.674Z","events":[]}

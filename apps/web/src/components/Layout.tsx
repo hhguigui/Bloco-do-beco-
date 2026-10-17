@@ -15,6 +15,7 @@ const NAV = [
   { to: "/mapa", label: "Mapa", id: "mapa" },
   { to: "/talentos", label: "Talentos", id: "talentos" },
   { to: "/atividades", label: "Atividades", id: "atividades" },
+  { to: "/meus-perfis", label: "Perfil", id: "perfil" },
 ];
 
 function UserMenu() {
