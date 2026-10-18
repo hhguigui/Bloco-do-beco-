@@ -20,7 +20,7 @@ export default function AdminLogin() {
   // Get redirect target from query param or state
   const from = (location.state as { from?: string })?.from || new URLSearchParams(location.search).get("from") || "/admin";
 
-  const [email, setEmail] = useState("admin@blocodobeco.local");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
@@ -77,7 +77,7 @@ export default function AdminLogin() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@blocodobeco.local"
+                  placeholder="admin@gmail.com"
                   autoComplete="email"
                   required
                   disabled={login.isPending}
@@ -129,21 +129,7 @@ export default function AdminLogin() {
           </form>
         </CardContent>
 
-        <CardFooter className="flex flex-col gap-3 pt-4 border-t border-amber-900/10">
-          <p className="text-center text-xs text-stone-500">
-            Apenas para administradores. Artistas usam <strong>Google OAuth</strong> em{" "}
-            <a href="/cadastrar" className="text-[#C2410C] hover:underline">/cadastrar</a>.
-          </p>
-          <p className="text-center text-xs text-stone-500">
-            Ou entre com Google se seu email estiver em <code className="bg-stone-100 px-1 rounded">ADMIN_EMAILS</code>.
-          </p>
-          <a
-            href="/"
-            className="text-center text-sm text-stone-600 hover:text-[#C2410C] transition-colors"
-          >
-            ← Voltar ao site
-          </a>
-        </CardFooter>
+      
       </Card>
     </div>
   );

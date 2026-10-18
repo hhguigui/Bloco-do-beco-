@@ -1,4 +1,4 @@
-import { Menu, LogIn } from "lucide-react";
+import { Menu, LogIn, Plus } from "lucide-react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -31,7 +31,7 @@ function UserMenu() {
         </div>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuItem render={<Link to="/meus-perfis" data-testid="user-menu-my-profile" />}>Meu perfil</DropdownMenuItem>
+        <DropdownMenuItem render={<Link to="/perfil" data-testid="user-menu-my-profile" />}>Meu perfil</DropdownMenuItem>
         {me.data?.is_admin && <DropdownMenuItem render={<Link to="/admin" data-testid="user-menu-admin" />}>Painel admin</DropdownMenuItem>}
         <DropdownMenuItem onClick={() => void endSession("/")} data-testid="user-menu-logout">Sair</DropdownMenuItem>
       </DropdownMenuContent>
@@ -61,6 +61,7 @@ function LoginButton() {
   );
 }
 
+
 function MobileMenuLinks() {
   const me = useMe();
   const user = me.isError ? null : (me.data?.user ?? null);
@@ -72,24 +73,52 @@ function MobileMenuLinks() {
           {n.label}
         </NavLink>
       ))}
-      <NavLink to="/cadastrar" className={linkClass} data-testid="mobile-nav-link-cadastrar">Cadastrar talento</NavLink>
-      {user ? (
-        <>
-          <NavLink to="/meus-perfis" className={linkClass} data-testid="mobile-nav-link-meus-perfis">Meu perfil</NavLink>
-          {me.data?.is_admin && <NavLink to="/admin" className={linkClass} data-testid="mobile-nav-link-admin">Admin</NavLink>}
-        </>
-      ) : (
+      <RegisterDropdownMobile user={user} />
+    </>
+  );
+}
+function RegisterDropdownMobile({ user }: { user: { user_id: string; email: string; name: string; picture: string } | null }) {
+  const handleRegister = (path: string) => {
+    if (user) {
+      window.location.href = path;
+    } else {
+      window.location.href = `/entrar?returnTo=${encodeURIComponent(path)}`;
+    }
+  };
+  
+  return (
+    <div className="space-y-1 pt-2 border-t border-amber-900/10">
+      {user && (
         <Button
           variant="outline"
           className="w-full justify-start gap-2 border-stone-300 bg-white text-stone-900 hover:bg-amber-900/5"
-          onClick={() => window.location.href = "/entrar"}
-          data-testid="mobile-login-button"
+          onClick={() => window.location.href = "/perfil"}
+          data-testid="mobile-my-profile"
         >
-          <LogIn className="size-4" />
-          <span>Entrar</span>
+          <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span>Meu perfil</span>
         </Button>
       )}
-    </>
+      <p className="px-2 text-xs font-mono uppercase tracking-[0.2em] text-[#C2410C]">Cadastrar</p>
+      <Button
+        variant="outline"
+        className="w-full justify-start gap-2 border-stone-300 bg-white text-stone-900 hover:bg-amber-900/5"
+        onClick={() => handleRegister("/perfil")}
+        data-testid="mobile-register-talent"
+      >
+        <Plus className="size-4" />
+        <span>Cadastrar talento</span>
+      </Button>
+      <Button
+        variant="outline"
+        className="w-full justify-start gap-2 border-stone-300 bg-white text-stone-900 hover:bg-amber-900/5"
+        onClick={() => handleRegister("/perfil")}
+        data-testid="mobile-register-activity"
+      >
+        <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span>Adicionar atividade</span>
+      </Button>
+    </div>
   );
 }
 
@@ -135,7 +164,8 @@ export default function Layout() {
               </NavLink>
             ))}
           </nav>
-           
+          
+          <UserMenu />
           <LoginButton />
           
           <Sheet>

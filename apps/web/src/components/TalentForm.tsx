@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { Camera, Loader2, MapPin, Plus, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -74,16 +75,74 @@ function SectionTitle({ n, title, hint }: { n: string; title: string; hint?: str
   );
 }
 
+function ActivityForm({ initial, onSave, onCancel }: { 
+  initial?: Activity; 
+  onSave: (data: Omit<Activity, "id">) => void; 
+  onCancel: () => void; 
+}) {
+  const [title, setTitle] = useState(initial?.title || "");
+  const [type, setType] = useState<ActivityType>(initial?.type || "oficina");
+  const [description, setDescription] = useState(initial?.description || "");
+  const [date, setDate] = useState(initial?.date || "");
+  const [schedule, setSchedule] = useState(initial?.schedule || "");
+  const [price, setPrice] = useState(initial?.price || "Gratuito");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim()) return;
+    onSave({ title: title.trim(), type, description: description.trim(), date: date || null, schedule: schedule.trim(), price: price.trim() || "Gratuito" });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="activity-title">Título *</Label>
+        <Input id="activity-title" placeholder="Ex.: Oficina de violão" value={title} onChange={(e) => setTitle(e.target.value)} className="bg-white" autoFocus />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="activity-type">Tipo *</Label>
+        <FieldSelect id="activity-type" value={type} onChange={(v) => setType(v as ActivityType)} options={ACTIVITY_LABELS} testId="activity-type-select" className="" />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="activity-description">Descrição</Label>
+        <Textarea id="activity-description" rows={3} placeholder="Descrição curta da atividade" value={description} onChange={(e) => setDescription(e.target.value)} className="bg-white" />
+      </div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="space-y-2">
+          <Label htmlFor="activity-date">Data (opcional)</Label>
+          <Input id="activity-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} className="bg-white" />
+          <p className="text-[11px] text-stone-500">Vazio = recorrente</p>
+        </div>
+        <div className="space-y-2 sm:col-span-2">
+          <Label htmlFor="activity-schedule">Dias e horários</Label>
+          <Input id="activity-schedule" placeholder="Ex.: Sábados, 10h" value={schedule} onChange={(e) => setSchedule(e.target.value)} className="bg-white" />
+        </div>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="activity-price">Valor</Label>
+        <Input id="activity-price" placeholder="Ex.: Gratuito, R$ 20" value={price} onChange={(e) => setPrice(e.target.value)} className="bg-white" />
+      </div>
+      <div className="flex gap-2 pt-2 border-t border-amber-900/10">
+        <Button type="button" variant="outline" onClick={onCancel} className="flex-1">Cancelar</Button>
+        <Button type="submit" className="flex-1 bg-[#E65100] hover:bg-[#C2410C]">Salvar</Button>
+      </div>
+    </form>
+  );
+}
+
 interface Props {
   initial?: TalentInput;
   prefill?: Partial<Pick<TalentInput, "name" | "photo">>; // e.g. Google account name/picture for new profiles
   submitLabel: string;
   pending: boolean;
   onSubmit: (values: TalentInput) => void;
+  activitiesOnly?: boolean; // only show activities section (for existing talent editing)
 }
 
-export default function TalentForm({ initial, prefill, submitLabel, pending, onSubmit }: Props) {
+export default function TalentForm({ initial, prefill, submitLabel, pending, onSubmit, activitiesOnly }: Props) {
   const [form, setForm] = useState<FormState>(initial ?? { ...EMPTY, ...prefill });
+  const [activityDialogOpen, setActivityDialogOpen] = useState(false);
+  const [editingActivityId, setEditingActivityId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const bioAi = useAiStream<BioRequest>("/ai/bio");
 
@@ -92,14 +151,36 @@ export default function TalentForm({ initial, prefill, submitLabel, pending, onS
   const setActivity = (id: string, patch: Partial<Activity>) =>
     setForm((f) => ({ ...f, activities: f.activities.map((a) => (a.id === id ? { ...a, ...patch } : a)) }));
 
-  const addActivity = () =>
-    setForm((f) => ({
-      ...f,
-      activities: [
-        ...f.activities,
-        { id: crypto.randomUUID(), title: "", type: "oficina", description: "", date: null, schedule: "", price: "Gratuito" },
-      ],
-    }));
+  const openAddActivity = () => {
+    setEditingActivityId(null);
+    setActivityDialogOpen(true);
+  };
+
+  const openEditActivity = (id: string) => {
+    setEditingActivityId(id);
+    setActivityDialogOpen(true);
+  };
+
+  const closeActivityDialog = () => {
+    setActivityDialogOpen(false);
+    setEditingActivityId(null);
+  };
+
+  const saveActivity = (data: Omit<Activity, "id">) => {
+    if (editingActivityId) {
+      setActivity(editingActivityId, data);
+    } else {
+      const newActivity: Activity = {
+        id: crypto.randomUUID(),
+        ...data,
+      };
+      setForm((f) => ({ ...f, activities: [...f.activities, newActivity] }));
+    }
+    closeActivityDialog();
+  };
+
+  const removeActivity = (id: string) =>
+    setForm((f) => ({ ...f, activities: f.activities.filter((x) => x.id !== id) }));
 
   const handlePhoto = async (file?: File) => {
     if (!file) return;
@@ -154,8 +235,10 @@ export default function TalentForm({ initial, prefill, submitLabel, pending, onS
 
   return (
     <form onSubmit={submit} className="space-y-10" data-testid="talent-form">
-      {/* 01 — identidade */}
-      <section className="space-y-5">
+      {!activitiesOnly && (
+        <>
+          {/* 01 — identidade */}
+          <section className="space-y-5">
         <SectionTitle n="01" title="Quem é o talento" hint="Nome artístico, área de atuação e uma foto." />
         <div className="flex flex-col gap-6 sm:flex-row">
           <div className="shrink-0">
@@ -295,54 +378,80 @@ export default function TalentForm({ initial, prefill, submitLabel, pending, onS
           </div>
         </div>
       </section>
+        </>
+      )}
+      
+      <Dialog open={activityDialogOpen} onOpenChange={closeActivityDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingActivityId ? "Editar atividade" : "Nova atividade"}</DialogTitle>
+            <DialogDescription>
+              Preencha os detalhes da oficina, aula, serviço ou evento.
+            </DialogDescription>
+          </DialogHeader>
+          <ActivityForm
+            initial={editingActivityId ? form.activities.find(a => a.id === editingActivityId) : undefined}
+            onSave={saveActivity}
+            onCancel={closeActivityDialog}
+          />
+        </DialogContent>
+      </Dialog>
 
       {/* 04 — atividades */}
       <section className="space-y-5">
         <SectionTitle n="04" title="Atividades oferecidas ao bairro" hint="Oficinas, aulas, serviços ou apresentações — é assim que os moradores encontram você." />
-        <div className="space-y-4">
+        <div className="space-y-3">
           {form.activities.map((a, i) => (
-            <div key={a.id} className="space-y-3 rounded-2xl border border-amber-900/10 bg-[#FAF5EE] p-4" data-testid={`activity-row-${i}`}>
-              <div className="grid gap-3 sm:grid-cols-[2fr_1fr_auto]">
-                <Input placeholder="Título da atividade" value={a.title} onChange={(e) => setActivity(a.id, { title: e.target.value })} data-testid={`activity-title-input-${i}`} className="bg-white" />
-                <FieldSelect
-                  id={`activity-type-${i}`}
-                  value={a.type}
-                  onChange={(v) => setActivity(a.id, { type: v as ActivityType })}
-                  options={ACTIVITY_LABELS}
-                  testId={`activity-type-select-${i}`}
-                  className=""
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  aria-label="Remover atividade"
-                  onClick={() => setForm((f) => ({ ...f, activities: f.activities.filter((x) => x.id !== a.id) }))}
-                  data-testid={`activity-remove-button-${i}`}
-                >
-                  <Trash2 className="size-4" />
-                </Button>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-3">
-                <div>
-                  <Input
-                    type="date"
-                    aria-label="Data (opcional)"
-                    value={a.date ?? ""}
-                    onChange={(e) => setActivity(a.id, { date: e.target.value || null })}
-                    data-testid={`activity-date-input-${i}`}
-                    className="bg-white"
-                  />
-                  <p className="mt-1 text-[11px] text-stone-500">Data do evento (vazio = recorrente)</p>
+            <div key={a.id} className="rounded-xl border border-amber-900/10 bg-white p-4 hover:border-amber-900/30 transition-colors cursor-pointer" 
+                 onClick={() => openEditActivity(a.id)}
+                 data-testid={`activity-card-${i}`}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="font-heading text-base font-bold truncate">{a.title || "Sem título"}</p>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-2 text-sm text-stone-600">
+                    <span className="px-2 py-0.5 rounded-full bg-amber-900/10 text-amber-900 text-xs font-medium">
+                      {ACTIVITY_LABELS[a.type as keyof typeof ACTIVITY_LABELS] || a.type}
+                    </span>
+                    {a.schedule && (
+                      <span className="flex items-center gap-1">
+                        <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                        {a.schedule}
+                      </span>
+                    )}
+                    {a.date && (
+                      <span className="flex items-center gap-1">
+                        <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        {a.date}
+                      </span>
+                    )}
+                    <span className="font-medium text-stone-900">{a.price}</span>
+                  </div>
+                  {a.description && <p className="mt-2 text-sm text-stone-500 line-clamp-2">{a.description}</p>}
                 </div>
-                <Input placeholder="Dias e horários (ex.: Sábados, 10h)" value={a.schedule} onChange={(e) => setActivity(a.id, { schedule: e.target.value })} data-testid={`activity-schedule-input-${i}`} className="bg-white" />
-                <Input placeholder="Valor (ex.: Gratuito, R$ 20)" value={a.price} onChange={(e) => setActivity(a.id, { price: e.target.value })} data-testid={`activity-price-input-${i}`} className="bg-white" />
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); openEditActivity(a.id); }} aria-label="Editar">
+                    <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  </Button>
+                  <Button variant="ghost" size="icon" className="text-red-600" onClick={(e) => { e.stopPropagation(); removeActivity(a.id); }} aria-label="Excluir">
+                    <Trash2 className="size-4" />
+                  </Button>
+                </div>
               </div>
-              <Textarea rows={2} placeholder="Descrição curta" value={a.description} onChange={(e) => setActivity(a.id, { description: e.target.value })} data-testid={`activity-description-input-${i}`} className="bg-white" />
             </div>
           ))}
-          <Button type="button" variant="outline" onClick={addActivity} data-testid="add-activity-button" className="border-dashed">
-            <Plus className="size-4" /> Adicionar atividade
+          {form.activities.length === 0 && (
+            <div className="rounded-xl border-2 border-dashed border-amber-900/20 p-8 text-center">
+              <p className="text-stone-500">Nenhuma atividade cadastrada ainda.</p>
+            </div>
+          )}
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={openAddActivity} 
+            data-testid="add-activity-button" 
+            className="w-full border-dashed py-4"
+          >
+            <Plus className="size-4 mr-2" /> Adicionar atividade
           </Button>
         </div>
       </section>

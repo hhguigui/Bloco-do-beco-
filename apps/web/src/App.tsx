@@ -28,6 +28,7 @@ export default function App() {
         <Route path="/mapa" element={<MapPage />} />
         <Route path="/cadastrar" element={<Register />} />
         <Route path="/entrar" element={<Login />} />
+        <Route path="/perfil" element={<MyProfiles />} />
         <Route path="/meus-perfis" element={<MyProfiles />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin" element={<Admin />} />

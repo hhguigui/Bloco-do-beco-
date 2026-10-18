@@ -104,11 +104,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* IA */}
-      <section className="mx-auto mt-20 max-w-7xl px-4 sm:px-8">
-        <AiAssistant />
-      </section>
-
       {/* DESTAQUES */}
       <section className="mx-auto mt-20 max-w-7xl px-4 sm:px-8">
         <div className="flex items-end justify-between gap-4">
@@ -127,6 +122,11 @@ export default function Home() {
           {list.length === 0 && <p className="text-stone-500">Os talentos aparecerão aqui assim que forem carregados.</p>}
         </div>
       </section>
+      {/* IA */}
+      <section className="mx-auto mt-20 max-w-7xl px-4 sm:px-8">
+        <AiAssistant />
+      </section>
+
 
       {/* ATIVIDADES */}
       <section className="mx-auto mt-20 max-w-7xl px-4 sm:px-8">

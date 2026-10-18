@@ -119,6 +119,10 @@ export default function Admin() {
           <p className="mt-1 text-stone-600" data-testid="admin-total-count">{all.length} perfis · {pending.length} aguardando aprovação</p>
         </div>
        
+        <Button variant="ghost" size="sm" onClick={() => void endSession("/")} className="text-red-600 hover:text-red-700 hover:bg-red-50" data-testid="admin-logout-button">
+          <LogOut className="size-4 mr-1.5" />
+          <span>Sair</span>
+        </Button>
       </div>
 
       <Tabs value={tab} onValueChange={(v) => setTab(String(v))} className="mt-8">
