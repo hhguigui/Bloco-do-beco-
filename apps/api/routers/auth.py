@@ -23,12 +23,31 @@ EMERGENT_SESSION_URL = "https://demobackend.emergentagent.com/auth/v1/env/oauth/
 
 
 @router.post("/login", response_model=Me)
-async def admin_login(payload: LoginRequest, response: Response, p: Principal = Depends(get_principal)):
+async def admin_login(payload: LoginRequest, response: Response):
     """Admin password login (kept alongside Google)."""
+    from lib.auth import admin_emails
+    
+    if payload.email.lower() not in admin_emails():
+        raise HTTPException(status_code=401, detail="Email não autorizado para acesso administrativo")
     if not hmac.compare_digest(payload.password, os.environ["ADMIN_PASSWORD"]):
         raise HTTPException(status_code=401, detail="Senha incorreta")
+    
+    # Create or lookup admin user
+    email = payload.email.lower()
+    user_id = f"admin_{email.split('@')[0]}"
+    now = datetime.now(timezone.utc)
+    await db.users.update_one(
+        {"user_id": user_id},
+        {
+            "$set": {"email": email, "name": email.split('@')[0], "picture": ""},
+            "$setOnInsert": {"user_id": user_id, "created_at": now},
+        },
+        upsert=True,
+    )
+    
     response.set_cookie(ADMIN_COOKIE, make_admin_token(), httponly=True, samesite="lax", max_age=7 * 24 * 3600, path="/")
-    return Me(user=p.user, is_admin=True)
+    user = User(user_id=user_id, email=email, name=email.split('@')[0], picture="")
+    return Me(user=user, is_admin=True)
 
 
 @router.post("/session", response_model=Me)
