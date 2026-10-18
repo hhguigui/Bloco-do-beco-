@@ -39,16 +39,14 @@ function UserMenu() {
 function Logo() {
   return (
     <Link to="/" className="flex items-center gap-2.5" data-testid="brand-logo-link">
-      {/* Container da Logo */}
-      <span className="grid size-9 place-items-center rounded-xl bg-[#ffffff] font-heading text-sm font-extrabold text-white shadow-[3px_3px_0_#141210] overflow-hidden">
+      <span className="grid size-9 place-items-center font-heading text-sm font-extrabold text-white overflow-hidden">
         <img 
           src="public/logo.png" 
           alt="Logo Bloco do Beco" 
           className="size-full object-cover"
         />
       </span>
-      
-      {/* Textos ao lado da Logo */}
+    
       <span className="leading-none">
         <span className="block font-heading text-base font-extrabold tracking-tight text-stone-900">
           Bloco do Beco
