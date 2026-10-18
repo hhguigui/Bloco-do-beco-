@@ -1,5 +1,5 @@
-import { Menu } from "lucide-react";
-import { Link, NavLink, Outlet } from "react-router-dom";
+import { Menu, LogIn } from "lucide-react";
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Toaster } from "@/components/ui/sonner";
@@ -25,14 +25,71 @@ function UserMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger render={<button type="button" className="flex items-center gap-2 rounded-full border border-amber-900/10 bg-white py-1 pl-1 pr-3 text-sm font-medium transition-colors hover:border-stone-400" data-testid="user-menu-button" />}>
         {user.picture ? <img src={user.picture} alt="" className="size-7 rounded-full" /> : <span className="grid size-7 place-items-center rounded-full bg-[#FFEDD5] text-xs font-bold text-[#C2410C]">{initials(user.name)}</span>}
-        <span className="max-w-28 truncate">{user.name.split(" ")[0]}</span>
+        <div className="text-left max-w-40">
+          <span className="block truncate font-medium">{user.name}</span>
+          <span className="block truncate text-xs text-stone-500">{user.email}</span>
+        </div>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-52">
-        <DropdownMenuItem render={<Link to="/meus-perfis" data-testid="user-menu-my-profiles" />}>Meus perfis</DropdownMenuItem>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuItem render={<Link to="/meus-perfis" data-testid="user-menu-my-profile" />}>Meu perfil</DropdownMenuItem>
         {me.data?.is_admin && <DropdownMenuItem render={<Link to="/admin" data-testid="user-menu-admin" />}>Painel admin</DropdownMenuItem>}
         <DropdownMenuItem onClick={() => void endSession("/")} data-testid="user-menu-logout">Sair</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+function LoginButton() {
+  const me = useMe();
+  const user = me.isError ? null : (me.data?.user ?? null);
+  const location = useLocation();
+  if (user) return null;
+  
+  const returnPath = location.pathname === "/entrar" ? "/" : location.pathname;
+  
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      className="gap-2 border-stone-300 bg-white text-stone-900 hover:bg-amber-900/5 hidden sm:flex"
+      onClick={() => window.location.href = `/entrar?returnTo=${encodeURIComponent(returnPath)}`}
+      data-testid="header-login-button"
+    >
+      <LogIn className="size-4" />
+      <span>Entrar</span>
+    </Button>
+  );
+}
+
+function MobileMenuLinks() {
+  const me = useMe();
+  const user = me.isError ? null : (me.data?.user ?? null);
+  
+  return (
+    <>
+      {NAV.map((n) => (
+        <NavLink key={n.to} to={n.to} end={n.to === "/"} className={linkClass} data-testid={`mobile-nav-link-${n.id}`}>
+          {n.label}
+        </NavLink>
+      ))}
+      <NavLink to="/cadastrar" className={linkClass} data-testid="mobile-nav-link-cadastrar">Cadastrar talento</NavLink>
+      {user ? (
+        <>
+          <NavLink to="/meus-perfis" className={linkClass} data-testid="mobile-nav-link-meus-perfis">Meu perfil</NavLink>
+          {me.data?.is_admin && <NavLink to="/admin" className={linkClass} data-testid="mobile-nav-link-admin">Admin</NavLink>}
+        </>
+      ) : (
+        <Button
+          variant="outline"
+          className="w-full justify-start gap-2 border-stone-300 bg-white text-stone-900 hover:bg-amber-900/5"
+          onClick={() => window.location.href = "/entrar"}
+          data-testid="mobile-login-button"
+        >
+          <LogIn className="size-4" />
+          <span>Entrar</span>
+        </Button>
+      )}
+    </>
   );
 }
 
@@ -78,6 +135,8 @@ export default function Layout() {
               </NavLink>
             ))}
           </nav>
+           
+          <LoginButton />
           
           <Sheet>
             <SheetTrigger render={<Button variant="ghost" size="icon" className="lg:hidden" data-testid="mobile-menu-button" aria-label="Abrir menu" />}>
@@ -86,11 +145,7 @@ export default function Layout() {
             <SheetContent side="right" className="w-72 bg-[#FDFBF7] p-6">
               <SheetTitle className="sr-only">Menu</SheetTitle>
               <nav className="mt-8 flex flex-col gap-1">
-                {[...NAV, { to: "/cadastrar", label: "Cadastrar talento", id: "cadastrar" }, { to: "/meus-perfis", label: "Meus perfis", id: "meus-perfis" }, { to: "/admin", label: "Admin", id: "admin" }].map((n) => (
-                  <NavLink key={n.to} to={n.to} end={n.to === "/"} className={linkClass} data-testid={`mobile-nav-link-${n.id}`}>
-                    {n.label}
-                  </NavLink>
-                ))}
+                <MobileMenuLinks />
               </nav>
             </SheetContent>
           </Sheet>
