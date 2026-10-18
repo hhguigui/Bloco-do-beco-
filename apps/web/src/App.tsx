@@ -7,8 +7,10 @@ import TalentDetail from "@/pages/TalentDetail";
 import Activities from "@/pages/Activities";
 import MapPage from "@/pages/MapPage";
 import Register from "@/pages/Register";
+import Login from "@/pages/Login";
 import MyProfiles from "@/pages/MyProfiles";
 import Admin from "@/pages/Admin";
+import AdminLogin from "@/pages/AdminLogin";
 import NotFound from "@/pages/NotFound";
 
 // One <Route> per page in src/pages; BrowserRouter already wraps this in main.tsx.
@@ -25,7 +27,9 @@ export default function App() {
         <Route path="/atividades" element={<Activities />} />
         <Route path="/mapa" element={<MapPage />} />
         <Route path="/cadastrar" element={<Register />} />
+        <Route path="/entrar" element={<Login />} />
         <Route path="/meus-perfis" element={<MyProfiles />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="*" element={<NotFound />} />
       </Route>
