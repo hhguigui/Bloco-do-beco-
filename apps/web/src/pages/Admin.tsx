@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Download, Eye, Loader2, LockKeyhole, LogOut, Pencil, Search, Trash2, X } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Check, Download, Eye, Loader2, LogOut, Pencil, Search, Trash2, X } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AdminDashboard from "@/components/AdminDashboard";
@@ -35,40 +35,6 @@ function exportCsv(list: Talent[]) {
   a.download = "talentos-bloco-do-beco.csv";
   a.click();
   URL.revokeObjectURL(url);
-}
-
-function LoginCard({ me }: { me?: Me }) {
-  const qc = useQueryClient();
-  const [password, setPassword] = useState("");
-  const login = useMutation({
-    mutationFn: () => apiPost<Me>("/auth/login", { password }),
-    onSuccess: (data) => {
-      qc.setQueryData(ME_KEY, data);
-      toast.success("Bem-vindo(a) ao painel do Bloco do Beco.");
-    },
-    onError: (err) => toast.error(errorMessage(err, "Não foi possível entrar.")),
-  });
-  return (
-    <div className="mx-auto max-w-md px-4 py-20">
-      <div className="rounded-3xl border border-amber-900/10 bg-white p-8 shadow-[0_30px_60px_-40px_rgba(120,53,15,0.4)]" data-testid="admin-login-card">
-        <span className="grid size-12 place-items-center rounded-2xl bg-[#FFEDD5] text-[#C2410C]"><LockKeyhole className="size-5" /></span>
-        <h1 className="mt-4 font-heading text-2xl font-extrabold tracking-tight">Área administrativa</h1>
-        <p className="mt-1 text-sm text-stone-600">Aprovação de artistas, gestão de perfis e painel de dados.</p>
-        {me?.user && (
-          <p className="mt-4 rounded-xl bg-[#FEF3C7] p-3 text-sm text-[#92400E]" data-testid="admin-not-authorized">
-            {me.user.email} não tem acesso de administrador.
-          </p>
-        )}
-        <form onSubmit={(e) => { e.preventDefault(); if (password) login.mutate(); }} data-testid="admin-login-form">
-          <Label htmlFor="admin-password">Senha</Label>
-          <Input id="admin-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} data-testid="admin-password-input" className="mt-2 bg-white" />
-          <Button type="submit" disabled={login.isPending || !password} className="mt-4 w-full bg-[#E65100] text-white hover:bg-[#C2410C]" data-testid="admin-login-submit-button">
-            {login.isPending && <Loader2 className="size-4 animate-spin" />} Entrar
-          </Button>
-        </form>
-      </div>
-    </div>
-  );
 }
 
 const STATUS_FILTERS: { id: TalentStatus | ""; label: string }[] = [
@@ -121,8 +87,13 @@ export default function Admin() {
     onError: (err) => toast.error(errorMessage(err)),
   });
 
+  const navigate = useNavigate();
+
   if (me.isLoading) return <div className="mx-auto mt-20 h-64 max-w-md animate-pulse rounded-3xl bg-[#FAF5EE]" />;
-  if (!authed) return <LoginCard me={me.data} />;
+  if (!authed) {
+    navigate("/admin/login", { replace: true, state: { from: "/admin" } });
+    return null;
+  }
 
   const actionButtons = (t: Talent) => (
     <>
