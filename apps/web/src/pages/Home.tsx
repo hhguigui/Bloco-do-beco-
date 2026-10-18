@@ -46,7 +46,7 @@ export default function Home() {
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <RegisterCta testId="hero-cta-cadastrar" className={cn(buttonVariants({ size: "lg" }), "bg-[#E65100] px-6 text-white shadow-[3px_3px_0_#141210] transition-[transform,box-shadow] hover:-translate-y-0.5 hover:bg-[#C2410C]")}>
-                Cadastrar um talento
+                Seja um talento
               </RegisterCta>
               <Link to="/mapa" data-testid="hero-cta-mapa" className={cn(buttonVariants({ size: "lg", variant: "outline" }), "px-6")}>
                 Ver o mapa <ArrowRight className="size-4" />

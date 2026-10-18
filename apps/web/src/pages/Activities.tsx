@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "motion/react";
-import { addDays, endOfMonth, format, parseISO } from "date-fns";
-import { CalendarClock, CalendarDays, MapPin, MessageCircle, Repeat, Tag } from "lucide-react";
+import { addDays, endOfMonth, format, parseISO, getDay } from "date-fns";
+import { CalendarClock, CalendarDays, MapPin, MessageCircle, Repeat, Tag, Calendar } from "lucide-react";
 import { Link } from "react-router-dom";
 import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,11 +15,77 @@ import { ACTIVITY_LABELS, CATEGORY_LABELS, formatDate, isFree, whatsappLink } fr
 import type { ActivityListing, TodayResponse } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
+// Day of week helpers
+const DAY_LABELS: Record<number, string> = {
+  0: "Domingo",
+  1: "Segunda",
+  2: "Terça",
+  3: "Quarta",
+  4: "Quinta",
+  5: "Sexta",
+  6: "Sábado",
+};
+const DAY_SHORT: Record<number, string> = {
+  0: "Dom",
+  1: "Seg",
+  2: "Ter",
+  3: "Qua",
+  4: "Qui",
+  5: "Sex",
+  6: "Sáb",
+};
+
+// Labels for the dayOfWeek facet (single days only)
+const DAY_FACET_LABELS: Record<string, string> = {
+  "1": "Segunda",
+  "2": "Terça",
+  "3": "Quarta",
+  "4": "Quinta",
+  "5": "Sexta",
+  "6": "Sábado",
+  "0": "Domingo",
+};
+
+// Extract day-of-week from schedule text (recurring activities)
+function extractDaysFromSchedule(schedule: string): number[] {
+  const days: number[] = [];
+  const lower = schedule.toLowerCase();
+  const dayPatterns: [RegExp, number][] = [
+    /domingo|dom\b/, 0,
+    /segunda|seg\b/, 1,
+    /ter[çc]a|ter\b/, 2,
+    /quarta|qua\b/, 3,
+    /quinta|qui\b/, 4,
+    /sexta|sex\b/, 5,
+    /s[áa]bado|s[áa]b|sab\b/, 6,
+  ];
+  for (let i = 0; i < dayPatterns.length; i += 2) {
+    if (dayPatterns[i] instanceof RegExp && dayPatterns[i].test(lower)) {
+      days.push(dayPatterns[i + 1] as number);
+    }
+  }
+  return days;
+}
+
+// Get day of week for an activity (from date or schedule)
+// Returns null if multiple days or unknown
+function getActivityDayOfWeek(activity: ActivityListing, _today: string): number | null {
+  if (activity.date) {
+    return getDay(parseISO(activity.date));
+  }
+  const days = extractDaysFromSchedule(activity.schedule || "");
+  if (days.length === 1) return days[0];
+  return null; // Multiple days or none
+}
+
 const FACETS: Facet<ActivityListing>[] = [
   { id: "category", label: "Categoria", get: (a) => a.talent_category, labels: CATEGORY_LABELS, allLabel: "Todas" },
   { id: "type", label: "Tipo", get: (a) => a.type, labels: ACTIVITY_LABELS },
   { id: "price", label: "Valor", get: (a) => (isFree(a.price) ? "gratuito" : "pago"), labels: { gratuito: "Gratuito", pago: "Pago / a combinar" }, allLabel: "Qualquer" },
-  { id: "talent", label: "Talento", get: (a) => a.talent_name },
+  { id: "dayOfWeek", label: "Dia da semana", get: (a) => {
+      const dow = getActivityDayOfWeek(a, "");
+      return dow !== null ? String(dow) : null;
+    }, labels: DAY_FACET_LABELS, allLabel: "Todos" },
 ];
 
 type Preset = "all" | "today" | "week" | "month" | "upcoming" | "custom";
@@ -60,6 +126,8 @@ export default function Activities() {
 
   // Date is the first step of the cascade: facets below only count activities inside the chosen period.
   const dated = range ? all.filter((a) => a.date && a.date >= range[0] && a.date <= range[1]) : all;
+
+  // Cascade includes dayOfWeek as a facet - it will show only days present in the date-filtered pool
   const { options, effective, result } = cascade(dated, FACETS, sel);
   const list = [...result].sort((a, b) => (a.date ?? "9999") .localeCompare(b.date ?? "9999"));
 
@@ -71,35 +139,9 @@ export default function Activities() {
         Oficinas, aulas, serviços e apresentações oferecidos pelos talentos do Jardim Ibirapuera. Encontrou algo? Fale direto com quem faz.
       </p>
 
-      <div className="mt-8 space-y-4 rounded-2xl border border-amber-900/10 bg-white p-4" data-testid="activities-filters-panel">
-        <div>
-          <p className="mb-2 flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-stone-500"><CalendarDays className="size-3.5" /> Data</p>
-          <div className="flex flex-wrap items-center gap-2">
-            {PRESETS.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => { setPreset(p.id); setSel({}); }}
-                data-testid={`activities-date-${p.id}`}
-                className={cn(
-                  "rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors duration-200",
-                  preset === p.id ? "border-[#0D9488] bg-[#0D9488] text-white" : "border-amber-900/15 bg-white text-stone-700 hover:border-stone-400",
-                )}
-              >
-                {p.label}
-              </button>
-            ))}
-            {preset === "custom" && (
-              <div className="flex items-center gap-2">
-                <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-40 bg-white" data-testid="activities-date-from" aria-label="De" />
-                <span className="text-sm text-stone-500">até</span>
-                <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="w-40 bg-white" data-testid="activities-date-to" aria-label="Até" />
-              </div>
-            )}
-          </div>
-          {range && <p className="mt-2 text-xs text-stone-500">Com filtro de data, mostramos só atividades com data marcada. Aulas recorrentes aparecem em “Qualquer data”.</p>}
-        </div>
-        <div className="border-t border-amber-900/10 pt-4">
+      <div className="mt-8 space-y-4 flex justify-center rounded-2xl border border-amber-900/10 bg-white p-4" data-testid="activities-filters-panel">
+
+        <div className="border-amber-900/10 pt-4">
           <CascadeFilters facets={FACETS} options={options} effective={effective} onChange={setSel} testId="activities-filters" />
         </div>
       </div>
@@ -111,6 +153,7 @@ export default function Activities() {
       <div className="mt-4 grid gap-5 md:grid-cols-2">
         {list.map((a, i) => {
           const wa = whatsappLink(a.phone, `Olá ${a.talent_name}! Tenho interesse em "${a.title}" (vi no site do Bloco do Beco).`);
+          const dow = getActivityDayOfWeek(a, today);
           return (
             <motion.article
               key={a.id}
@@ -133,6 +176,11 @@ export default function Activities() {
                   </p>
                 ) : (
                   <p className="flex items-center gap-1.5"><Repeat className="size-4 text-[#0D9488]" /> Recorrente</p>
+                )}
+                {dow !== null && (
+                  <p className="flex items-center gap-1.5 text-stone-700">
+                    <Calendar className="size-4 text-[#E65100]" /> {DAY_LABELS[dow]}
+                  </p>
                 )}
                 <p className="flex items-center gap-1.5"><CalendarClock className="size-4 text-[#E65100]" /> {a.schedule || "Horário a combinar"}</p>
                 <p className="flex items-center gap-1.5"><MapPin className="size-4 text-[#E65100]" /> {a.address}</p>

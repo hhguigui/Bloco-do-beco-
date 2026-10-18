@@ -13,9 +13,6 @@ import type { Talent } from "@/lib/types";
 
 const FACETS: Facet<Talent>[] = [
   { id: "category", label: "Categoria", get: (t) => t.category, labels: CATEGORY_LABELS, allLabel: "Todas" },
-  { id: "specialty", label: "Tipo", get: (t) => t.specialty, allLabel: "Todas" },
-  { id: "experience", label: "Valor", get: (t) => t.experience, labels: EXPERIENCE_LABELS },
-  { id: "age", label: "Talento", get: (t) => t.age_range, labels: AGE_LABELS, allLabel: "Todas" },
 ];
 
 export default function Talents() {
@@ -40,12 +37,17 @@ export default function Talents() {
       <h1 className="mt-2 font-heading text-4xl font-extrabold tracking-tight sm:text-5xl">Talentos do Jardim Ibirapuera</h1>
       <p className="mt-3 max-w-2xl text-stone-600">Busque por nome ou atividade e refine em cascata: categoria → tipo → valor → talento.</p>
 
-      <div className="sticky top-[65px] z-30 -mx-4 mt-8 space-y-4 border-b border-amber-900/10 bg-[#FDFBF7]/90 px-4 py-4 backdrop-blur sm:-mx-8 sm:px-8">
-        <div className="relative max-w-xl">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-stone-400" />
-          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ex.: pandeiro, costura, grafite…" className="h-11 bg-white pl-10" data-testid="talents-search-input" />
+      <div className="flex flex-wrap items-end gap-5 z-30 -mx-4 mt-8 border-b border-amber-900/10 bg-[#FDFBF7]/90 px-4 py-4 backdrop-blur sm:-mx-8 sm:px-8">
+        <div className="relative flex-1 min-w-[200px]">
+          <label htmlFor="talents-search" className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-stone-500">
+            Busca
+          </label>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-stone-400" />
+            <Input id="talents-search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ex.: pandeiro, costura, grafite…" className="h-11 bg-white pl-10" data-testid="talents-search-input" />
+          </div>
         </div>
-        <CascadeFilters facets={FACETS} options={options} effective={effective} onChange={setSel} testId="talents-filters" />
+        <CascadeFilters showLabels={true} facets={FACETS} options={options} effective={effective} onChange={setSel} testId="talents-filters" />
       </div>
 
       <p className="mt-6 font-mono text-xs uppercase tracking-wider text-stone-500" data-testid="talents-result-count">
