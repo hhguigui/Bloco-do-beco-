@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import GoogleSignInCard from "@/components/GoogleSignInCard";
 import TalentForm from "@/components/TalentForm";
+import UserAvatar from "@/components/UserAvatar";
 import { apiPost, errorMessage } from "@/lib/api";
 import { useMe } from "@/lib/auth";
 import type { Talent, TalentInput } from "@/lib/types";
@@ -59,7 +60,7 @@ export default function Register() {
         ) : (
           <div className="rounded-3xl border border-amber-900/10 bg-white p-6 shadow-[0_30px_60px_-40px_rgba(120,53,15,0.4)] sm:p-10">
             <p className="mb-8 flex items-center gap-3 rounded-2xl bg-[#FAF5EE] p-3 text-sm text-stone-600" data-testid="register-signed-in-as">
-              {user.picture && <img src={user.picture} alt="" className="size-8 rounded-full" />}
+              <UserAvatar name={user.name} picture={user.picture} className="size-8" />
               <span>
                 Cadastrando como <strong className="text-stone-900">{user.email}</strong>. Nome e foto vieram da sua conta Google — ajuste se quiser.
               </span>

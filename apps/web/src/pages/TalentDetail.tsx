@@ -11,6 +11,7 @@ import {
   CATEGORY_META,
   EXPERIENCE_LABELS,
   formatDate,
+  GENDER_LABELS,
   initials,
   STATUS_META,
   instagramLink,
@@ -84,9 +85,10 @@ export default function TalentDetail() {
               </div>
             </div>
 
-            <div className="mt-10 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-amber-900/10 bg-amber-900/10 sm:grid-cols-3">
+            <div className="mt-10 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-amber-900/10 bg-amber-900/10 sm:grid-cols-4">
               {[
                 { label: "Faixa etária", value: AGE_LABELS[t.age_range], id: "age" },
+                { label: "Gênero", value: GENDER_LABELS[t.gender], id: "gender" },
                 { label: "Tempo de atuação", value: EXPERIENCE_LABELS[t.experience], id: "experience" },
                 { label: "Atividades", value: String(t.activities.length), id: "activities" },
               ].map((f) => (

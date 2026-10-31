@@ -33,6 +33,7 @@ export interface TalentInput {
   age_range: AgeRange;
   experience: Experience;
   address: string;
+  birth_year?: string; // client-side only — converted to age_range on submit
   lat: number | null;
   lng: number | null;
   phone: string;

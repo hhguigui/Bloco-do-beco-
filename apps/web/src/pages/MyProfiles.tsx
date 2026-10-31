@@ -8,7 +8,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import CategoryBadge from "@/components/CategoryBadge";
 import GoogleSignInCard from "@/components/GoogleSignInCard";
 import StatusBadge from "@/components/StatusBadge";
-import TalentForm from "@/components/TalentForm";
+import TalentForm, { SectionTitle } from "@/components/TalentForm";
+import UserAvatar from "@/components/UserAvatar";
 import { apiDelete, apiGet, apiPost, apiPut, errorMessage } from "@/lib/api";
 import { useMe } from "@/lib/auth";
 import { toInput, initials } from "@/lib/catalog";
@@ -56,13 +57,12 @@ export default function MyProfiles() {
             <aside className="lg:sticky lg:top-24 lg:self-start">
               <div className="rounded-3xl border border-amber-900/10 bg-white p-6 shadow-[0_30px_60px_-40px_rgba(120,53,15,0.4)] sm:p-10">
                 <div className="flex items-start gap-4">
-                  {user.picture ? (
-                    <img src={user.picture} alt="" className="size-20 rounded-2xl object-cover" />
-                  ) : (
-                    <span className="grid size-20 place-items-center rounded-2xl bg-[#FFEDD5] text-2xl font-bold text-[#C2410C]">
-                      {initials(user.name)}
-                    </span>
-                  )}
+                  <UserAvatar
+                    name={user.name}
+                    picture={user.picture}
+                    className="size-20 rounded-2xl"
+                    fallbackClassName="text-2xl"
+                  />
                   <div className="flex-1 min-w-0">
                     <p className="font-heading text-xl font-bold truncate">{user.name}</p>
                     <p className="mt-1 text-sm text-stone-500 truncate">{user.email}</p>
@@ -132,6 +132,7 @@ export default function MyProfiles() {
                         Cancelar
                       </Button>
                     </div>
+                    <SectionTitle n="04" title="Atividades oferecidas ao bairro" hint="Atualize as oficinas, aulas, serviços ou apresentações do seu perfil." />
                     <TalentForm
                       key={editing.id}
                       initial={toInput(editing)}

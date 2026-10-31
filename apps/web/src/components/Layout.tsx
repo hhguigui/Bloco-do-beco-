@@ -9,6 +9,7 @@ import { useMe } from "@/lib/auth";
 import { initials } from "@/lib/catalog";
 import { endSession } from "@/lib/session";
 import { cn } from "@/lib/utils";
+import UserAvatar from "./UserAvatar";
 
 const NAV = [
   { to: "/", label: "Início", id: "home" },
@@ -24,7 +25,7 @@ function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger render={<button type="button" className="flex items-center gap-2 rounded-full border border-amber-900/10 bg-white py-1 pl-1 pr-3 text-sm font-medium transition-colors hover:border-stone-400" data-testid="user-menu-button" />}>
-        {user.picture ? <img src={user.picture} alt="" className="size-7 rounded-full" /> : <span className="grid size-7 place-items-center rounded-full bg-[#FFEDD5] text-xs font-bold text-[#C2410C]">{initials(user.name)}</span>}
+        <UserAvatar name={user.name} picture={user.picture} />
         <div className="text-left max-w-40">
           <span className="block truncate font-medium">{user.name}</span>
           <span className="block truncate text-xs text-stone-500">{user.email}</span>

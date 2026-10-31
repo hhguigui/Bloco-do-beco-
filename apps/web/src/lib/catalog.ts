@@ -35,6 +35,19 @@ export const AGE_LABELS: Record<AgeRange, string> = {
   "65+": "65 anos ou mais",
 };
 
+export const AGE_RANGES: AgeRange[] = Object.keys(AGE_LABELS) as AgeRange[];
+
+/** Converts a birth year to the matching AgeRange used by the backend. */
+export function birthYearToAgeRange(birthYear: number): AgeRange {
+  const age = 2026 - birthYear;
+  if (age < 15) return "15-24"; // edge: child treated as youngest bracket
+  if (age <= 24) return "15-24";
+  if (age <= 34) return "25-34";
+  if (age <= 49) return "35-49";
+  if (age <= 64) return "50-64";
+  return "65+";
+}
+
 export const EXPERIENCE_LABELS: Record<Experience, string> = {
   "<2": "Menos de 2 anos",
   "2-5": "2 a 5 anos",
@@ -87,5 +100,10 @@ export function initials(name: string): string {
 
 export function toInput(t: Talent): TalentInput {
   const { id: _id, created_at: _c, status: _s, owner_id: _o, owner_email: _e, ...rest } = t;
-  return rest;
+  // Infer an approximate birth year from the stored age_range so the form pre-fills the year field.
+  const yearMap: Record<AgeRange, number> = {
+    "15-24": 1998, "25-34": 1990, "35-49": 1978, "50-64": 1958, "65+": 1945,
+  };
+  const inferred = yearMap[rest.age_range];
+  return { ...rest, birth_year: inferred ? String(inferred) : undefined };
 }

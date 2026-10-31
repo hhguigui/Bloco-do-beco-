@@ -14,6 +14,7 @@ import {
   CATEGORY_LABELS,
   EXPERIENCE_LABELS,
   GENDER_LABELS,
+  birthYearToAgeRange,
   initials,
 } from "@/lib/catalog";
 import { useAiStream } from "@/lib/useAiStream";
@@ -23,6 +24,13 @@ type FormState = Omit<TalentInput, "category" | "age_range" | "experience"> & {
   category: Category | "";
   age_range: AgeRange | "";
   experience: Experience | "";
+  cep: string;
+  street: string;
+  number: string;
+  neighborhood: string;
+  city: string;
+  state: string;
+  birth_year: string;
 };
 
 const EMPTY: FormState = {
@@ -40,6 +48,13 @@ const EMPTY: FormState = {
   instagram: "",
   photo: "",
   activities: [],
+  cep: "",
+  street: "",
+  number: "",
+  neighborhood: "",
+  city: "",
+  state: "",
+  birth_year: "",
 };
 
 function resizeImage(file: File, max = 640): Promise<string> {
@@ -63,7 +78,7 @@ function resizeImage(file: File, max = 640): Promise<string> {
   });
 }
 
-function SectionTitle({ n, title, hint }: { n: string; title: string; hint?: string }) {
+export function SectionTitle({ n, title, hint }: { n: string; title: string; hint?: string }) {
   return (
     <div className="flex items-baseline gap-3 border-b border-amber-900/10 pb-3">
       <span className="font-mono text-xs text-[#C2410C]">{n}</span>
@@ -140,7 +155,32 @@ interface Props {
 }
 
 export default function TalentForm({ initial, prefill, submitLabel, pending, onSubmit, activitiesOnly }: Props) {
-  const [form, setForm] = useState<FormState>(initial ?? { ...EMPTY, ...prefill });
+  const [form, setForm] = useState<FormState>(() => {
+    if (initial) {
+      // Split stored address into street/number for the new fields.
+      const addrMatch = initial.address.match(/^(.+?),\s*(\d+)/);
+      const street = addrMatch ? addrMatch[1].trim() : initial.address;
+      const number = addrMatch ? addrMatch[2] : "";
+      // Infer birth_year from age_range.
+      const yearMap: Record<AgeRange, number> = {
+        "15-24": 1998, "25-34": 1990, "35-49": 1978, "50-64": 1958, "65+": 1945,
+      };
+      const inferred = yearMap[initial.age_range];
+      return {
+        ...EMPTY,
+        ...initial,
+        cep: "",
+        street,
+        number,
+        neighborhood: "",
+        city: "",
+        state: "",
+        birth_year: inferred ? String(inferred) : "",
+      };
+    }
+    return { ...EMPTY, ...prefill };
+  });
+
   const [activityDialogOpen, setActivityDialogOpen] = useState(false);
   const [editingActivityId, setEditingActivityId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -205,14 +245,41 @@ export default function TalentForm({ initial, prefill, submitLabel, pending, onS
     );
   };
 
+  /** Look up CEP via ViaCEP and populate street/neighborhood/city/state. */
+  const lookupCep = async (cep: string) => {
+    const digits = cep.replace(/\D/g, "");
+    if (digits.length !== 8) return;
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+      const data = await res.json() as { logradouro?: string; bairro?: string; localidade?: string; UF?: string; erro?: boolean };
+      if (data.erro) return;
+      set("street", data.logradouro ?? "");
+      set("neighborhood", data.bairro ?? "");
+      set("city", data.localidade ?? "");
+      set("state", data.UF ?? "");
+      toast.success("Endereço encontrado pelo CEP!");
+    } catch {
+      toast.error("Não foi possível buscar o CEP. Verifique e tente novamente.");
+    }
+  };
+
+  const handleCepChange = (raw: string) => {
+    // Format CEP as XXXXX-XXX while typing
+    const digits = raw.replace(/\D/g, "").slice(0, 8);
+    const formatted = digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits;
+    set("cep", formatted);
+    if (digits.length === 8) void lookupCep(digits);
+  };
+
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     const missing: string[] = [];
     if (form.name.trim().length < 2) missing.push("nome");
     if (!form.category) missing.push("categoria");
-    if (!form.age_range) missing.push("faixa etária");
+    if (!form.birth_year) missing.push("ano de nascimento");
     if (!form.experience) missing.push("tempo de atuação");
-    if (form.address.trim().length < 3) missing.push("endereço");
+    if (!form.street.trim()) missing.push("rua/logradouro");
+    if (!form.number.trim()) missing.push("número");
     if (missing.length) {
       toast.error(`Preencha: ${missing.join(", ")}.`);
       return;
@@ -222,13 +289,16 @@ export default function TalentForm({ initial, prefill, submitLabel, pending, onS
       toast.error("O título de cada atividade precisa de pelo menos 2 letras.");
       return;
     }
+    const ageRange = form.birth_year ? birthYearToAgeRange(parseInt(form.birth_year)) : form.age_range as AgeRange;
     onSubmit({
       ...form,
       category: form.category as Category,
-      age_range: form.age_range as AgeRange,
+      age_range: ageRange,
       experience: form.experience as Experience,
       name: form.name.trim(),
-      address: form.address.trim(),
+      address: `${form.street.trim()}, ${form.number.trim()}${form.neighborhood ? ', ' + form.neighborhood : ''} — ${form.city.trim()}, ${form.state.trim()}`,
+      lat: form.lat,
+      lng: form.lng,
       activities: activities.map((a) => ({ ...a, title: a.title.trim() })),
     });
   };
@@ -280,7 +350,6 @@ export default function TalentForm({ initial, prefill, submitLabel, pending, onS
             </div>
             <FieldSelect
               id="category"
-              label="Categoria *"
               value={form.category}
               onChange={(v) => set("category", v as Category)}
               options={CATEGORY_LABELS}
@@ -329,18 +398,49 @@ export default function TalentForm({ initial, prefill, submitLabel, pending, onS
 
       {/* 02 — perfil */}
       <section className="space-y-5">
-        <SectionTitle n="02" title="Perfil" hint="Usado apenas de forma agregada no Painel de Dados." />
+        <SectionTitle n="02" title="Perfil" hint="Dados demográficos usados apenas de forma agregada no Painel de Dados." />
         <div className="grid gap-4 sm:grid-cols-3">
-          <FieldSelect id="gender" label="Gênero" value={form.gender} onChange={(v) => set("gender", v as Gender)} options={GENDER_LABELS} testId="form-gender-select" />
-          <FieldSelect id="age" label="Faixa etária *" value={form.age_range} onChange={(v) => set("age_range", v as AgeRange)} options={AGE_LABELS} testId="form-age-select" />
-          <FieldSelect
-            id="experience"
-            label="Tempo de atuação *"
-            value={form.experience}
-            onChange={(v) => set("experience", v as Experience)}
-            options={EXPERIENCE_LABELS}
-            testId="form-experience-select"
-          />
+          <div className="space-y-2">
+            <Label htmlFor="gender">Gênero</Label>
+            <FieldSelect id="gender" value={form.gender} onChange={(v) => set("gender", v as Gender)} options={GENDER_LABELS} testId="form-gender-select" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="birth-year">Ano de nascimento *</Label>
+            <Input
+              id="birth-year"
+              type="number"
+              min={1900}
+              max={2026}
+              placeholder="Ex.: 1990"
+              value={form.birth_year}
+              onChange={(e) => {
+                const val = e.target.value;
+                set("birth_year", val);
+                if (val) {
+                  set("age_range", birthYearToAgeRange(parseInt(val)));
+                } else {
+                  set("age_range", "");
+                }
+              }}
+              data-testid="form-birth-year-input"
+              className="bg-white"
+            />
+            {form.birth_year && (
+              <p className="text-[11px] text-stone-500">
+                {AGE_LABELS[birthYearToAgeRange(parseInt(form.birth_year))]}
+              </p>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="experience">Tempo de atuação *</Label>
+            <FieldSelect
+              id="experience"
+              value={form.experience}
+              onChange={(v) => set("experience", v as Experience)}
+              options={EXPERIENCE_LABELS}
+              testId="form-experience-select"
+            />
+          </div>
         </div>
       </section>
 
@@ -348,17 +448,82 @@ export default function TalentForm({ initial, prefill, submitLabel, pending, onS
       <section className="space-y-5">
         <SectionTitle n="03" title="Onde encontrar" hint="Endereço no Jardim Ibirapuera e formas de contato." />
         <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2 sm:col-span-2">
-            <Label htmlFor="address">Endereço (rua e número) *</Label>
+          {/* CEP */}
+          <div className="space-y-2">
+            <Label htmlFor="cep">CEP</Label>
             <Input
-              id="address"
-              placeholder="Ex.: Rua Teresa Carreño, 45"
-              value={form.address}
-              onChange={(e) => setForm((f) => ({ ...f, address: e.target.value, lat: null, lng: null }))}
-              data-testid="form-address-input"
+              id="cep"
+              placeholder="00000-000"
+              value={form.cep}
+              onChange={(e) => handleCepChange(e.target.value)}
+              data-testid="form-cep-input"
+              className="bg-white"
+              maxLength={9}
+            />
+            <p className="text-[11px] text-stone-500">Digite o CEP para preencher o endereço automaticamente.</p>
+          </div>
+          {/* Rua */}
+          <div className="space-y-2">
+            <Label htmlFor="street">Rua / Logradouro *</Label>
+            <Input
+              id="street"
+              placeholder="Ex.: Rua Teresa Carreño"
+              value={form.street}
+              onChange={(e) => set("street", e.target.value)}
+              data-testid="form-street-input"
               className="bg-white"
             />
           </div>
+          {/* Número */}
+          <div className="space-y-2">
+            <Label htmlFor="number">Número da casa *</Label>
+            <Input
+              id="number"
+              placeholder="Ex.: 45"
+              value={form.number}
+              onChange={(e) => set("number", e.target.value)}
+              data-testid="form-number-input"
+              className="bg-white"
+            />
+          </div>
+          {/* Bairro */}
+          <div className="space-y-2">
+            <Label htmlFor="neighborhood">Bairro</Label>
+            <Input
+              id="neighborhood"
+              placeholder="Ex.: Jardim Ibirapuera"
+              value={form.neighborhood}
+              onChange={(e) => set("neighborhood", e.target.value)}
+              data-testid="form-neighborhood-input"
+              className="bg-white"
+            />
+          </div>
+          {/* Cidade */}
+          <div className="space-y-2">
+            <Label htmlFor="city">Cidade</Label>
+            <Input
+              id="city"
+              placeholder="Ex.: São Paulo"
+              value={form.city}
+              onChange={(e) => set("city", e.target.value)}
+              data-testid="form-city-input"
+              className="bg-white"
+            />
+          </div>
+          {/* Estado */}
+          <div className="space-y-2">
+            <Label htmlFor="state">Estado</Label>
+            <Input
+              id="state"
+              placeholder="Ex.: SP"
+              value={form.state}
+              onChange={(e) => set("state", e.target.value.toUpperCase())}
+              data-testid="form-state-input"
+              className="bg-white"
+              maxLength={2}
+            />
+          </div>
+          {/* Map */}
           <div className="space-y-2 sm:col-span-2">
             <p className="flex items-center gap-1.5 text-sm text-stone-600">
               <MapPin className="size-4 text-[#E65100]" />
@@ -368,6 +533,7 @@ export default function TalentForm({ initial, prefill, submitLabel, pending, onS
             </p>
             <LocationPicker lat={form.lat} lng={form.lng} onPick={(lat, lng) => setForm((f) => ({ ...f, lat, lng }))} />
           </div>
+          {/* Phone & Instagram */}
           <div className="space-y-2">
             <Label htmlFor="phone">WhatsApp</Label>
             <Input id="phone" placeholder="11 98888-0000" value={form.phone} onChange={(e) => set("phone", e.target.value)} data-testid="form-phone-input" className="bg-white" />

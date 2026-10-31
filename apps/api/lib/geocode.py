@@ -29,7 +29,13 @@ async def geocode(address: str) -> Optional[tuple[float, float]]:
 async def resolve_coords(address: str, lat: Optional[float], lng: Optional[float]) -> tuple[float, float]:
     if lat is not None and lng is not None:
         return lat, lng
-    found = await geocode(address)
+    # Strip the house number from the address for cleaner Nominatim lookup.
+    # Address format is expected to be "Rua X, 123" — remove the ", NNN" suffix.
+    import re
+    clean_address = re.sub(r",\s*\d+\s*$", "", address).strip()
+    if not clean_address:
+        clean_address = address
+    found = await geocode(clean_address)
     if found:
         return found
     # Fallback: approximate point inside the neighbourhood so the talent still shows on the map.

@@ -78,7 +78,9 @@ def artist_session():
 @pytest.fixture
 def admin_client():
     """httpx client authenticated as admin via password login (bdb_admin cookie)."""
+    import os
+    admin_email = os.environ.get("ADMIN_EMAILS", "").split(",")[0].strip().lower()
     with httpx.Client(base_url=API_URL, timeout=30.0) as c:
-        r = c.post("/auth/login", json={"password": os.environ.get("ADMIN_PASSWORD", "beco2026")})
+        r = c.post("/auth/login", json={"email": admin_email, "password": os.environ.get("ADMIN_PASSWORD", "beco2026")})
         assert r.status_code == 200, r.text
         yield c
