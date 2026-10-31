@@ -1,0 +1,29 @@
+# Environment files
+**/.env
+**/.env.local
+**/.env.*.local
+
+# Node
+node_modules/
+**/dist/
+
+# Python
+**/.venv/
+**/__pycache__/
+**/*.pyc
+
+# IDE
+.vscode/
+.idea/
+
+# Lock files
+package-lock.json
+yarn.lock
+apps/tests/yarn.lock
+
+# Tests cache
+**/.pytest_cache/
+**/.playwright/
+
+# OS
+.DS_Store
