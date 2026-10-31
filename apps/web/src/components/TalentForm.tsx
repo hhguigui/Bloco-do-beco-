@@ -30,6 +30,7 @@ type FormState = Omit<TalentInput, "category" | "age_range" | "experience"> & {
   neighborhood: string;
   city: string;
   state: string;
+  complement: string;
   birth_year: string;
 };
 
@@ -54,6 +55,7 @@ const EMPTY: FormState = {
   neighborhood: "",
   city: "",
   state: "",
+  complement: "",
   birth_year: "",
 };
 
@@ -157,24 +159,28 @@ interface Props {
 export default function TalentForm({ initial, prefill, submitLabel, pending, onSubmit, activitiesOnly }: Props) {
   const [form, setForm] = useState<FormState>(() => {
     if (initial) {
-      // Split stored address into street/number for the new fields.
-      const addrMatch = initial.address.match(/^(.+?),\s*(\d+)/);
+      // Split stored address into street/number/complement for the new fields.
+      // Expected format: "Rua X, 123, Complemento, Bairro — Cidade, UF"
+      const addrMatch = initial.address.match(/^([^,]+),\s*(\d+)(?:,\s*([^,]+?))?(?:\s*,\s*([^—]+?))?\s*—\s*(.+)$/);
       const street = addrMatch ? addrMatch[1].trim() : initial.address;
       const number = addrMatch ? addrMatch[2] : "";
-      // Infer birth_year from age_range.
+      const complement = addrMatch && addrMatch[3] ? addrMatch[3].trim() : "";
       const yearMap: Record<AgeRange, number> = {
         "15-24": 1998, "25-34": 1990, "35-49": 1978, "50-64": 1958, "65+": 1945,
       };
       const inferred = yearMap[initial.age_range];
+      const parts = addrMatch ? addrMatch[5] : undefined;
+      const cityStateParts = parts ? parts.split(",") : [];
       return {
         ...EMPTY,
         ...initial,
         cep: "",
         street,
         number,
-        neighborhood: "",
-        city: "",
-        state: "",
+        neighborhood: addrMatch ? (addrMatch[4] ?? "").trim() : "",
+        city: cityStateParts[0]?.trim() ?? "",
+        state: cityStateParts[1]?.trim() ?? "",
+        complement,
         birth_year: inferred ? String(inferred) : "",
       };
     }
@@ -296,7 +302,7 @@ export default function TalentForm({ initial, prefill, submitLabel, pending, onS
       age_range: ageRange,
       experience: form.experience as Experience,
       name: form.name.trim(),
-      address: `${form.street.trim()}, ${form.number.trim()}${form.neighborhood ? ', ' + form.neighborhood : ''} — ${form.city.trim()}, ${form.state.trim()}`,
+      address: `${form.street.trim()}, ${form.number.trim()}${form.complement.trim() ? ', ' + form.complement.trim() : ''}${form.neighborhood ? ', ' + form.neighborhood : ''} — ${form.city.trim() || 'São Paulo'}, ${form.state.trim() || 'SP'}`,
       lat: form.lat,
       lng: form.lng,
       activities: activities.map((a) => ({ ...a, title: a.title.trim() })),
@@ -483,6 +489,18 @@ export default function TalentForm({ initial, prefill, submitLabel, pending, onS
               value={form.number}
               onChange={(e) => set("number", e.target.value)}
               data-testid="form-number-input"
+              className="bg-white"
+            />
+          </div>
+          {/* Complemento */}
+          <div className="space-y-2">
+            <Label htmlFor="complement">Complemento</Label>
+            <Input
+              id="complement"
+              placeholder="Ex.: Apto 12, Fundos"
+              value={form.complement}
+              onChange={(e) => set("complement", e.target.value)}
+              data-testid="form-complement-input"
               className="bg-white"
             />
           </div>
