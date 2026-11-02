@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pymongo import ASCENDING, DESCENDING
 
 from lib.auth import (
     ADMIN_COOKIE,
@@ -13,6 +14,8 @@ from lib.auth import (
     get_principal,
     make_admin_token,
     session_token_from,
+    require_admin,
+    require_user,
 )
 from lib.db import db
 from models.auth import LoginRequest, Me, SessionRequest, User
@@ -87,6 +90,69 @@ async def google_session(payload: SessionRequest, response: Response):
 async def me(p: Principal = Depends(get_principal)):
     # Anonymous → {user: null, is_admin: false} (200) so the header can probe without console noise.
     return p.me()
+
+
+@router.get("/admin/users", response_model=list[User])
+async def list_users(p: Principal = Depends(require_admin)):
+    docs = await db.users.find({}, {"_id": 0}).sort([("created_at", DESCENDING), ("email", ASCENDING)]).to_list()
+    return [User(**d) for d in docs if "user_id" in d]
+
+
+@router.patch("/me/role", response_model=Me)
+async def update_my_role(payload: dict, p: Principal = Depends(require_user)):
+    """Allow logged-in users to set their own role to customer or talent."""
+    assert p.user
+    role = payload.get("role")
+    if role not in ("customer", "talent"):
+        raise HTTPException(status_code=422, detail="Role deve ser 'customer' ou 'talent'")
+    await db.users.update_one(
+        {"user_id": p.user.user_id},
+        {"$set": {"role": role}},
+    )
+    updated = await db.users.find_one({"user_id": p.user.user_id}, {"_id": 0})
+    user = User(**updated)
+    return Me(user=user, is_admin=p.is_admin)
+
+
+@router.patch("/me/phone", response_model=Me)
+async def update_my_phone(payload: dict, p: Principal = Depends(require_user)):
+    """Allow logged-in users to add/remove phone numbers."""
+    assert p.user
+    action = payload.get("action", "add")  # "add" or "remove"
+    phone = payload.get("phone", "").strip()
+    
+    # Get current phones
+    existing = await db.users.find_one({"user_id": p.user.user_id}, {"_id": 0})
+    phones = existing.get("phones", []) if existing else []
+    
+    if action == "add":
+        if phone and len(phone) >= 10 and phone not in phones:
+            phones.append(phone)
+    elif action == "remove" and phone in phones:
+        phones.remove(phone)
+    
+    await db.users.update_one(
+        {"user_id": p.user.user_id},
+        {"$set": {"phones": phones}},
+    )
+    updated = await db.users.find_one({"user_id": p.user.user_id}, {"_id": 0})
+    user = User(**updated)
+    return Me(user=user, is_admin=p.is_admin)
+
+
+@router.patch("/admin/users/{user_id}/role", response_model=Me)
+async def admin_update_user_role(user_id: str, payload: dict, p: Principal = Depends(require_admin)):
+    """Admin can change any user's role."""
+    role = payload.get("role")
+    if role not in ("customer", "talent"):
+        raise HTTPException(status_code=422, detail="Role deve ser 'customer' ou 'talent'")
+    existing = await db.users.find_one({"user_id": user_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+    await db.users.update_one({"user_id": user_id}, {"$set": {"role": role}})
+    updated = await db.users.find_one({"user_id": user_id}, {"_id": 0})
+    user = User(**updated)
+    return Me(user=user, is_admin=p.is_admin)
 
 
 @router.post("/logout", response_model=Me)

@@ -63,6 +63,16 @@ export const ACTIVITY_LABELS: Record<ActivityType, string> = {
   evento: "Apresentação / Evento",
 };
 
+export const WEEKDAY_LABELS: Record<string, string> = {
+  segunda: "Segunda",
+  terca: "Terça",
+  quarta: "Quarta",
+  quinta: "Quinta",
+  sexta: "Sexta",
+  sabado: "Sábado",
+  domingo: "Domingo",
+};
+
 export const CHART_PALETTE = ["#E65100", "#0D9488", "#D97706", "#7C3AED", "#E11D48", "#0284C7", "#16A34A"];
 
 export const STATUS_META: Record<TalentStatus, { label: string; bg: string; fg: string }> = {
@@ -77,11 +87,20 @@ export function formatDate(iso: string, pattern = "EEE, dd 'de' MMM"): string {
   return format(parseISO(iso), pattern, { locale: ptBR });
 }
 
-export function whatsappLink(phone: string, message?: string): string {
+export function formatDateActivity(date: string | null, schedule: string): { dateDisplay: string; dayOfWeek?: string } {
+  if (!date) return { dateDisplay: "", dayOfWeek: undefined };
+  const d = parseISO(date);
+  const dateFormatted = format(d, "EEEE, dd 'de' MMMM", { locale: ptBR });
+  const day = format(d, "EEEE");
+  return { dateDisplay: dateFormatted, dayOfWeek: day };
+}
+
+export function formatPhone(phone: string): string {
   const digits = phone.replace(/\D/g, "");
-  if (digits.length < 10) return "";
-  const full = digits.startsWith("55") && digits.length > 11 ? digits : `55${digits}`;
-  return `https://wa.me/${full}${message ? `?text=${encodeURIComponent(message)}` : ""}`;
+  if (digits.length < 10) return phone;
+  if (digits.length === 11) return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  if (digits.length === 12) return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  return phone;
 }
 
 export function instagramLink(handle: string): string {
@@ -104,6 +123,6 @@ export function toInput(t: Talent): TalentInput {
   const yearMap: Record<AgeRange, number> = {
     "15-24": 1998, "25-34": 1990, "35-49": 1978, "50-64": 1958, "65+": 1945,
   };
-  const inferred = yearMap[rest.age_range];
-  return { ...rest, birth_year: inferred ? String(inferred) : undefined };
+  const inferred = rest.age_range ? yearMap[rest.age_range] : undefined;
+  return { ...rest, birth_date: inferred ? `${inferred}-01-01` : undefined };
 }

@@ -68,7 +68,7 @@ def artist_session():
     user_id = f"tscheck-user-{suffix}"
     token = f"tscheck_session_{suffix}"
     email = f"tscheck.{suffix}@example.com"
-    db.users.insert_one({"user_id": user_id, "email": email, "name": "TsCheck Artist", "picture": "", "created_at": datetime.now(timezone.utc)})
+    db.users.insert_one({"user_id": user_id, "email": email, "name": "TsCheck Artist", "picture": "", "created_at": datetime.now(timezone.utc), "phones": []})
     db.user_sessions.insert_one({"user_id": user_id, "session_token": token, "expires_at": datetime.now(timezone.utc) + timedelta(days=1), "created_at": datetime.now(timezone.utc)})
     yield {"user_id": user_id, "token": token, "email": email}
     db.user_sessions.delete_many({"user_id": user_id})

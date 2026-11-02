@@ -9,4 +9,5 @@ class BioRequest(BaseModel):
     name: str = Field(default="", max_length=120)
     category: str = Field(default="", max_length=40)
     specialty: str = Field(default="", max_length=120)
+    gender: str = Field(default="", max_length=30)
     notes: str = Field(min_length=3, max_length=1500)

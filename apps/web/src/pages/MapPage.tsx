@@ -14,9 +14,8 @@ import { cn } from "@/lib/utils";
 
 const FACETS: Facet<Talent>[] = [
   { id: "category", label: "Categoria", get: (t) => t.category, labels: CATEGORY_LABELS, allLabel: "Todas" },
-  { id: "specialty", label: "Tipo", get: (t) => t.specialty, allLabel: "Todas" },
-  { id: "activity", label: "Valor", get: (t) => t.activities.map((a) => a.type), labels: ACTIVITY_LABELS, allLabel: "Qualquer" },
-  { id: "experience", label: "Talento", get: (t) => t.experience, labels: EXPERIENCE_LABELS },
+  { id: "activity", label: "Tipo de Atividade", get: (t) => t.activities.map((a) => a.type), labels: ACTIVITY_LABELS, allLabel: "Qualquer" },
+  { id: "experience", label: "Tempo de Atuação", get: (t) => t.experience, labels: EXPERIENCE_LABELS, allLabel: "Qualquer" },
 ];
 
 export default function MapPage() {
@@ -39,7 +38,7 @@ export default function MapPage() {
         </p>
       </div>
 
-      <div className="mt-6 rounded-2xl border border-amber-900/10 bg-white p-4">
+      <div className="mt-6 rounded-2xl border flex flex-col items-center border-amber-900/10 bg-white p-4">
         <CascadeFilters facets={FACETS} options={options} effective={effective} onChange={(s) => { setSel(s); setSelected(null); }} testId="map-filters" />
         <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1.5 border-t border-amber-900/10 pt-3" data-testid="map-legend">
           {CATEGORIES.map((c) => (

@@ -20,7 +20,7 @@ import {
   isFree,
 } from "@/lib/catalog";
 import { useAiStream } from "@/lib/useAiStream";
-import type { Category, Talent } from "@/lib/types";
+import type { Category, Talent, AgeRange, Gender } from "@/lib/types";
 
 interface Row {
   key: string;
@@ -89,8 +89,8 @@ export default function AdminDashboard({ pendingCount }: { pendingCount: number 
 
   const acts = result.flatMap((t) => t.activities);
   const categories = tally(result.map((t) => t.category), CATEGORY_LABELS, (k) => CATEGORY_META[k as Category].color);
-  const genders = tally(result.map((t) => t.gender), GENDER_LABELS, (_k, i) => CHART_PALETTE[i]).filter((r) => r.value > 0);
-  const ages = tally(result.map((t) => t.age_range), AGE_LABELS, () => "#0D9488").map((r) => ({ ...r, name: r.key }));
+  const genders = tally(result.map((t) => t.gender).filter(Boolean), GENDER_LABELS, (_k, i) => CHART_PALETTE[i]).filter((r) => r.value > 0);
+  const ages = tally(result.map((t) => t.age_range).filter((x): x is AgeRange => !!x), AGE_LABELS, () => "#0D9488").map((r) => ({ ...r, name: r.key }));
   const experience = tally(result.map((t) => t.experience), EXPERIENCE_LABELS, () => "#D97706");
   const activityTypes = tally(acts.map((a) => a.type), ACTIVITY_LABELS, (_k, i) => CHART_PALETTE[i]);
 
@@ -152,7 +152,7 @@ export default function AdminDashboard({ pendingCount }: { pendingCount: number 
       <section className="mt-10 rounded-3xl border border-amber-900/10 bg-[#FAF5EE] p-6 sm:p-8" data-testid="ai-report-section">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="max-w-2xl">
-            <p className="inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-[#C2410C]"><Sparkles className="size-3.5" /> Análise com IA · Claude</p>
+            <p className="inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-[#C2410C]"><Sparkles className="size-3.5" /> Análise com IA</p>
             <h3 className="mt-2 font-heading text-2xl font-extrabold tracking-tight">Relatório do território</h3>
             <p className="mt-1 text-stone-600">Texto com destaques, perfil dos talentos aprovados e lacunas — pronto para editais e prestação de contas.</p>
           </div>

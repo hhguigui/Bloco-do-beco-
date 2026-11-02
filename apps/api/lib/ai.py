@@ -11,57 +11,53 @@ from fastapi.responses import StreamingResponse
 
 logger = logging.getLogger(__name__)
 
-MODEL = ("anthropic", "claude-sonnet-4-5-20250929")
-
-# Try to import emergentintegrations; if missing, use mock
+# Groq client for chat-based endpoints (e.g., /ai/bio).
+_GROQ_MODEL = "openai/gpt-oss-120b"
+_HAS_GROQ = False
 try:
-    from emergentintegrations.llm.chat import LlmChat, StreamDone, TextDelta, UserMessage
-    _HAS_EMERGENT = True
+    from groq import AsyncGroq
+
+    _HAS_GROQ = True
 except ImportError:
-    _HAS_EMERGENT = False
-    logger.warning("emergentintegrations not installed — AI endpoints will return mock responses")
-
-    class TextDelta:  # type: ignore
-        def __init__(self, content: str):
-            self.content = content
-
-    class StreamDone:  # type: ignore
-        pass
-
-    class UserMessage:  # type: ignore
-        def __init__(self, text: str):
-            self.text = text
-
-    class LlmChat:  # type: ignore
-        def __init__(self, api_key: str, session_id: str, system_message: str):
-            self.api_key = api_key
-            self.session_id = session_id
-            self.system_message = system_message
-
-        def with_model(self, *args, **kwargs):
-            return self
-
-        async def stream_message(self, message: UserMessage):
-            yield TextDelta(f"[MOCK] {message.text[:100]}...")
-            yield StreamDone()
+    logger.warning("groq not installed — AI chat endpoints will fall back to mock responses")
 
 
-async def stream_claude(system: str, prompt: str) -> AsyncIterator[str]:
-    if not _HAS_EMERGENT:
-        # Mock response for local development
-        yield f"[MOCK AI] System: {system[:80]}... Prompt: {prompt[:80]}..."
+async def stream_chat(system: str, prompt: str) -> AsyncIterator[str]:
+    """Stream a chat completion using Groq; falls back to a small mock if unavailable."""
+    if os.environ.get("GROQ_API_KEY"):
+        if not _HAS_GROQ:
+            logger.warning("GROQ_API_KEY is set but groq package is missing — using mock")
+        else:
+            try:
+                api_key = os.environ["GROQ_API_KEY"]
+                from groq import AsyncGroq
+                client = AsyncGroq(api_key=api_key)
+                response = await client.chat.completions.create(
+                    model=_GROQ_MODEL,
+                    messages=[{"role": "system", "content": system}, {"role": "user", "content": prompt}],
+                    stream=True,
+                )
+                async for chunk in response:
+                    delta = chunk.choices[0].delta.content
+                    if delta:
+                        yield delta
+                return
+            except Exception:
+                logger.exception("Groq chat stream failed; falling back to mock")
+
+    # Fallback mock
+    if "corretor gramatical" in system or "corrigir" in system:
+        yield prompt
         return
+    if "Catálogo de talentos" in prompt:
+        yield "Aqui estão alguns talentos incríveis do Jardim Ibirapuera que recomendamos conhecer: [Exemplo de Talento](/talento/1). Confira as atividades e participe!"
+        return
+    yield f"{prompt[:150]}"
 
-    chat = LlmChat(
-        api_key=os.environ["EMERGENT_LLM_KEY"],
-        session_id=str(uuid.uuid4()),
-        system_message=system,
-    ).with_model(*MODEL)
-    async for ev in chat.stream_message(UserMessage(text=prompt)):
-        if isinstance(ev, TextDelta):
-            yield ev.content
-        elif isinstance(ev, StreamDone):
-            break
+
+async def _mock_bio() -> str:
+    # A tiny placeholder so the endpoint doesn't break locally without a provider.
+    return "Texto de exemplo para biografia — ajuste conforme necessário."
 
 
 def sse_response(

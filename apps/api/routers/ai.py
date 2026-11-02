@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends
 
-from lib.ai import sse_response, stream_claude
+from lib.ai import sse_response, stream_chat
 from lib.auth import require_admin
 from lib.db import db
 from models.ai import BioRequest, RecommendRequest
@@ -58,25 +58,20 @@ async def recommend(payload: RecommendRequest):
         "ou convide a pessoa a indicar alguém para se cadastrar. Não use títulos (#) nem tabelas."
     )
     prompt = f"Catálogo de talentos (JSON):\n{json.dumps(catalog, ensure_ascii=False)}\n\nPedido do morador: {payload.query}"
-    return sse_response(stream_claude(system, prompt), lambda out: log_ai("recommend", payload.query, out))
+    return sse_response(stream_chat(system, prompt), lambda out: log_ai("recommend", payload.query, out))
 
 
 @router.post("/bio")
 async def bio(payload: BioRequest):
     system = (
-        "Você escreve biografias curtas para perfis de artistas e talentos do Jardim Ibirapuera, São Paulo, "
-        "publicadas no site do coletivo Bloco do Beco. Escreva em português do Brasil, em terceira pessoa, "
-        "tom acolhedor e valorizando a cultura periférica, com 60 a 110 palavras, em 1 ou 2 parágrafos. "
-        "Não invente prêmios, datas ou fatos que não foram informados. Responda apenas com o texto da biografia, "
-        "sem título, aspas ou markdown."
+        "Você é um corretor gramatical de português do Brasil. Sua única tarefa é corrigir o texto enviado, "
+        "apenas ajustando pontuação, ortografia, acentuação, concordância nominal/verbal e uso de vírgulas/pontos. "
+        "Não reescreva, não melhore estilo, não adicione ou remova informações, não invente fatos. "
+        "Mantenha a mesma ordem das frases e a mesma voz do autor. "
+        "Responda apenas com o texto corrigido, sem comentários adicionais."
     )
-    prompt = (
-        f"Nome: {payload.name or 'não informado'}\n"
-        f"Categoria: {CATEGORY_LABELS.get(payload.category, payload.category) or 'não informada'}\n"
-        f"Especialidade: {payload.specialty or 'não informada'}\n"
-        f"Anotações do artista: {payload.notes}"
-    )
-    return sse_response(stream_claude(system, prompt), lambda out: log_ai("bio", payload.notes, out))
+    prompt = payload.notes
+    return sse_response(stream_chat(system, prompt), lambda out: log_ai("bio", payload.notes, out))
 
 
 @router.post("/report", dependencies=[Depends(require_admin)])
@@ -101,4 +96,4 @@ async def report():
         f"Estatísticas: {stats.model_dump_json()}\n"
         f"Amostra de talentos: {json.dumps(sample, ensure_ascii=False)}"
     )
-    return sse_response(stream_claude(system, prompt), lambda out: log_ai("report", "report", out))
+    return sse_response(stream_chat(system, prompt), lambda out: log_ai("report", "report", out))

@@ -1,10 +1,10 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import GoogleSignInCard from "@/components/GoogleSignInCard";
 import TalentForm from "@/components/TalentForm";
 import UserAvatar from "@/components/UserAvatar";
-import { apiPost, errorMessage } from "@/lib/api";
+import { apiPost, apiGet, errorMessage } from "@/lib/api";
 import { useMe } from "@/lib/auth";
 import type { Talent, TalentInput } from "@/lib/types";
 
@@ -13,6 +13,15 @@ export default function Register() {
   const navigate = useNavigate();
   const me = useMe();
   const user = me.isError ? null : (me.data?.user ?? null);
+  const mine = useQuery({ queryKey: ["my-talents"], queryFn: () => apiGet<Talent[]>("/me/talents"), enabled: !!user });
+  const list = mine.isError ? [] : (mine.data ?? []);
+
+  // If user already has a profile, redirect to edit it
+  if (user && list.length > 0 && !mine.isLoading) {
+    const existing = list[0];
+    navigate(`/meus-perfis`);
+    return null;
+  }
 
   const create = useMutation({
     mutationFn: (values: TalentInput) => apiPost<Talent>("/talents", values),

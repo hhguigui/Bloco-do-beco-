@@ -18,6 +18,26 @@ EXPERIENCES = ["<2", "2-5", "5-10", "10-20", "20+"]
 ACTIVITY_TYPES = ["oficina", "aula", "servico", "evento"]
 
 
+def birth_date_to_age_range(birth_date_str: str) -> AgeRange:
+    try:
+        year = int(birth_date_str.split("-")[0])
+        age = 2026 - year
+        if age < 15:
+            return "15-24"
+        if age <= 24:
+            return "15-24"
+        if age <= 34:
+            return "25-34"
+        if age <= 49:
+            return "35-49"
+        if age <= 64:
+            return "50-64"
+        return "65+"
+    except Exception:
+        return "25-34"
+
+
+
 class Activity(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     title: str = Field(min_length=2, max_length=120)
@@ -26,6 +46,7 @@ class Activity(BaseModel):
     date: Optional[str] = Field(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")  # one-off date (YYYY-MM-DD); None = recurring
     schedule: str = Field(default="", max_length=200)
     price: str = Field(default="Gratuito", max_length=80)
+    weekdays: list[str] = Field(default_factory=list)  # ["segunda", "terca", ...]
 
 
 class TalentInput(BaseModel):
@@ -36,14 +57,17 @@ class TalentInput(BaseModel):
     specialty: str = Field(default="", max_length=120)
     bio: str = Field(default="", max_length=3000)
     gender: Gender = "nao_informado"
-    age_range: AgeRange
+    age_range: Optional[AgeRange] = None
+    birth_date: Optional[str] = Field(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")
     experience: Experience
     address: str = Field(min_length=3, max_length=200)
+    cep: str = Field(default="", max_length=9)
     lat: Optional[float] = None
     lng: Optional[float] = None
     phone: str = Field(default="", max_length=40)
     instagram: str = Field(default="", max_length=80)
     photo: str = Field(default="", max_length=1_500_000)  # URL or data: URL (resized client-side)
+    cover_image: str = Field(default="", max_length=1_500_000)  # URL
     activities: list[Activity] = Field(default_factory=list)
 
 
@@ -54,6 +78,7 @@ class Talent(TalentInput):
     status: TalentStatus = "pending"
     owner_id: Optional[str] = None
     owner_email: str = ""  # only returned to admins
+    is_owner: bool = False  # true when the authenticated user owns this talent
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 

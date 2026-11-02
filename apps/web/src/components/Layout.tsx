@@ -1,5 +1,6 @@
-import { Menu, LogIn, Plus } from "lucide-react";
+import { Menu, LogIn } from "lucide-react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { AnimatePresence, motion } from "motion/react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Toaster } from "@/components/ui/sonner";
@@ -9,31 +10,47 @@ import { useMe } from "@/lib/auth";
 import { initials } from "@/lib/catalog";
 import { endSession } from "@/lib/session";
 import { cn } from "@/lib/utils";
-import UserAvatar from "./UserAvatar";
 
-const NAV = [
+const PUBLIC_NAV = [
   { to: "/", label: "Início", id: "home" },
   { to: "/mapa", label: "Mapa", id: "mapa" },
   { to: "/talentos", label: "Talentos", id: "talentos" },
   { to: "/atividades", label: "Atividades", id: "atividades" },
+  { to: "/participantes", label: "Participantes", id: "participantes" },
 ];
 
 function UserMenu() {
   const me = useMe();
   const user = me.isError ? null : (me.data?.user ?? null);
   if (!user) return null;
+  const isAdmin = me.data?.is_admin ?? false;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger render={<button type="button" className="flex items-center gap-2 rounded-full border border-amber-900/10 bg-white py-1 pl-1 pr-3 text-sm font-medium transition-colors hover:border-stone-400" data-testid="user-menu-button" />}>
-        <UserAvatar name={user.name} picture={user.picture} />
-        <div className="text-left max-w-40">
-          <span className="block truncate font-medium">{user.name}</span>
-          <span className="block truncate text-xs text-stone-500">{user.email}</span>
-        </div>
+        {user.picture ? (
+          <img src={user.picture} alt="" className="size-7 rounded-full" />
+        ) : (
+          <span className="grid size-7 place-items-center rounded-full bg-[#FFEDD5] text-xs font-bold text-[#C2410C]">{initials(user.name)}</span>
+        )}
+        <span className="truncate max-w-24 font-medium text-sm">{user.name}</span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuItem render={<Link to="/perfil" data-testid="user-menu-my-profile" />}>Meu perfil</DropdownMenuItem>
-        {me.data?.is_admin && <DropdownMenuItem render={<Link to="/admin" data-testid="user-menu-admin" />}>Painel admin</DropdownMenuItem>}
+        {/* Perfil info */}
+        <div className="px-2 py-2 border-b border-amber-900/10">
+          <p className="text-sm font-semibold text-stone-900">{user.name}</p>
+          <p className="text-xs text-stone-500 truncate">{user.email}</p>
+          <p className="text-xs font-semibold mt-0.5">
+            {isAdmin ? (
+              <span className="text-[#E65100]">★ Admin</span>
+            ) : user.role === "talent" ? (
+              <span className="text-[#16A34A]">★ Talento</span>
+            ) : (
+              <span className="text-stone-500">● Cliente</span>
+            )}
+          </p>
+        </div>
+        <DropdownMenuItem render={<Link to="/meus-perfis" data-testid="user-menu-my-profile" />}>Meu perfil</DropdownMenuItem>
+        {isAdmin && <DropdownMenuItem render={<Link to="/admin" data-testid="user-menu-admin" />}>Painel admin</DropdownMenuItem>}
         <DropdownMenuItem onClick={() => void endSession("/")} data-testid="user-menu-logout">Sair</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -62,64 +79,35 @@ function LoginButton() {
   );
 }
 
-
 function MobileMenuLinks() {
   const me = useMe();
   const user = me.isError ? null : (me.data?.user ?? null);
   
   return (
     <>
-      {NAV.map((n) => (
+      {PUBLIC_NAV.map((n) => (
         <NavLink key={n.to} to={n.to} end={n.to === "/"} className={linkClass} data-testid={`mobile-nav-link-${n.id}`}>
           {n.label}
         </NavLink>
       ))}
-      <RegisterDropdownMobile user={user} />
-    </>
-  );
-}
-function RegisterDropdownMobile({ user }: { user: { user_id: string; email: string; name: string; picture: string } | null }) {
-  const handleRegister = (path: string) => {
-    if (user) {
-      window.location.href = path;
-    } else {
-      window.location.href = `/entrar?returnTo=${encodeURIComponent(path)}`;
-    }
-  };
-  
-  return (
-    <div className="space-y-1 pt-2 border-t border-amber-900/10">
-      {user && (
+      <NavLink to="/cadastrar" className={linkClass} data-testid="mobile-nav-link-cadastrar">Cadastrar talento</NavLink>
+      {user ? (
+        <>
+          <NavLink to="/meus-perfis" className={linkClass} data-testid="mobile-nav-link-meus-perfis">Meu perfil</NavLink>
+          {me.data?.is_admin && <NavLink to="/admin" className={linkClass} data-testid="mobile-nav-link-admin">Admin</NavLink>}
+        </>
+      ) : (
         <Button
           variant="outline"
           className="w-full justify-start gap-2 border-stone-300 bg-white text-stone-900 hover:bg-amber-900/5"
-          onClick={() => window.location.href = "/perfil"}
-          data-testid="mobile-my-profile"
+          onClick={() => window.location.href = "/entrar"}
+          data-testid="mobile-login-button"
         >
-          <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          <span>Meu perfil</span>
+          <LogIn className="size-4" />
+          <span>Entrar</span>
         </Button>
       )}
-      <p className="px-2 text-xs font-mono uppercase tracking-[0.2em] text-[#C2410C]">Cadastrar</p>
-      <Button
-        variant="outline"
-        className="w-full justify-start gap-2 border-stone-300 bg-white text-stone-900 hover:bg-amber-900/5"
-        onClick={() => handleRegister("/perfil")}
-        data-testid="mobile-register-talent"
-      >
-        <Plus className="size-4" />
-        <span>Cadastrar talento</span>
-      </Button>
-      <Button
-        variant="outline"
-        className="w-full justify-start gap-2 border-stone-300 bg-white text-stone-900 hover:bg-amber-900/5"
-        onClick={() => handleRegister("/perfil")}
-        data-testid="mobile-register-activity"
-      >
-        <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        <span>Adicionar atividade</span>
-      </Button>
-    </div>
+    </>
   );
 }
 
@@ -128,7 +116,7 @@ function Logo() {
     <Link to="/" className="flex items-center gap-2.5" data-testid="brand-logo-link">
       <span className="grid size-9 place-items-center font-heading text-sm font-extrabold text-white overflow-hidden">
         <img 
-          src="public/logo.png" 
+          src="/logo.png" 
           alt="Logo Bloco do Beco" 
           className="size-full object-cover"
         />
@@ -149,7 +137,9 @@ function Logo() {
 const linkClass = ({ isActive }: { isActive: boolean }) =>
   cn(
     "relative rounded-full px-3.5 py-2 text-sm font-medium transition-colors duration-200",
-    isActive ? "bg-stone-900 text-white" : "text-stone-700 hover:bg-amber-900/5 hover:text-stone-900",
+    isActive
+      ? "bg-[#E65100] text-white font-bold shadow-md"
+      : "bg-[#fff] text-write hover:bg-[#E65100] hover:text-white",
   );
 
 export default function Layout() {
@@ -158,14 +148,14 @@ export default function Layout() {
       <header className="sticky top-0 z-50 border-b border-amber-900/10 bg-[#FDFBF7]/85 px-4 py-3 backdrop-blur-md sm:px-8">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
           <Logo />
-          <nav className="hidden items-center gap-1 lg:flex">
-            {NAV.map((n) => (
+          <nav className="hidden border-1 bg-[#FEFEFE] rounded-2xl items-center gap-1 lg:flex">
+            {PUBLIC_NAV.map((n) => (
               <NavLink key={n.to} to={n.to} end={n.to === "/"} className={linkClass} data-testid={`nav-link-${n.id}`}>
                 {n.label}
               </NavLink>
             ))}
           </nav>
-          
+           
           <UserMenu />
           <LoginButton />
           
@@ -184,7 +174,17 @@ export default function Layout() {
       </header>
 
       <main className="flex-1">
-        <Outlet />
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <Outlet />
+          </motion.div>
+        </AnimatePresence>
       </main>
 
       <footer className="mt-24 bg-[#141210] px-4 pb-10 pt-16 text-[#EDE8E1] sm:px-8" data-testid="site-footer">
@@ -196,6 +196,7 @@ export default function Layout() {
             <div className="flex flex-col gap-2">
               <RegisterCta className="text-left hover:text-white" testId="footer-link-cadastrar">Cadastrar um talento</RegisterCta>
               <Link to="/atividades" className="hover:text-white" data-testid="footer-link-atividades">Atividades no bairro</Link>
+              <Link to="/participantes" className="hover:text-white" data-testid="footer-link-participantes">Participantes</Link>
               <Link to="/mapa" className="hover:text-white" data-testid="footer-link-mapa">Mapa de talentos</Link>
             </div>
             <p className="font-mono text-xs uppercase tracking-wider text-[#78716C]">

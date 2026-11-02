@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "motion/react";
 import { addDays, endOfMonth, format, parseISO, getDay } from "date-fns";
-import { CalendarClock, CalendarDays, MapPin, MessageCircle, Repeat, Tag, Calendar } from "lucide-react";
+import { CalendarClock, CalendarDays, MapPin, Repeat, Tag } from "lucide-react";
 import { Link } from "react-router-dom";
 import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,29 +11,9 @@ import CategoryBadge from "@/components/CategoryBadge";
 import { apiGet } from "@/lib/api";
 import { cascade } from "@/lib/cascade";
 import type { Facet, Selection } from "@/lib/cascade";
-import { ACTIVITY_LABELS, CATEGORY_LABELS, formatDate, isFree, whatsappLink } from "@/lib/catalog";
+import { ACTIVITY_LABELS, CATEGORY_LABELS, formatDateActivity, isFree, WEEKDAY_LABELS } from "@/lib/catalog";
 import type { ActivityListing, TodayResponse } from "@/lib/types";
 import { cn } from "@/lib/utils";
-
-// Day of week helpers
-const DAY_LABELS: Record<number, string> = {
-  0: "Domingo",
-  1: "Segunda",
-  2: "Terça",
-  3: "Quarta",
-  4: "Quinta",
-  5: "Sexta",
-  6: "Sábado",
-};
-const DAY_SHORT: Record<number, string> = {
-  0: "Dom",
-  1: "Seg",
-  2: "Ter",
-  3: "Qua",
-  4: "Qui",
-  5: "Sex",
-  6: "Sáb",
-};
 
 // Labels for the dayOfWeek facet (single days only)
 const DAY_FACET_LABELS: Record<string, string> = {
@@ -51,17 +31,17 @@ function extractDaysFromSchedule(schedule: string): number[] {
   const days: number[] = [];
   const lower = schedule.toLowerCase();
   const dayPatterns: [RegExp, number][] = [
-    /domingo|dom\b/, 0,
-    /segunda|seg\b/, 1,
-    /ter[çc]a|ter\b/, 2,
-    /quarta|qua\b/, 3,
-    /quinta|qui\b/, 4,
-    /sexta|sex\b/, 5,
-    /s[áa]bado|s[áa]b|sab\b/, 6,
+    [/domingo|dom\b/, 0],
+    [/segunda|seg\b/, 1],
+    [/ter[çc]a|ter\b/, 2],
+    [/quarta|qua\b/, 3],
+    [/quinta|qui\b/, 4],
+    [/sexta|sex\b/, 5],
+    [/s[áa]bado|s[áa]b|sab\b/, 6],
   ];
-  for (let i = 0; i < dayPatterns.length; i += 2) {
-    if (dayPatterns[i] instanceof RegExp && dayPatterns[i].test(lower)) {
-      days.push(dayPatterns[i + 1] as number);
+  for (const [pattern, day] of dayPatterns) {
+    if (pattern.test(lower)) {
+      days.push(day);
     }
   }
   return days;
@@ -152,7 +132,6 @@ export default function Activities() {
 
       <div className="mt-4 grid gap-5 md:grid-cols-2">
         {list.map((a, i) => {
-          const wa = whatsappLink(a.phone, `Olá ${a.talent_name}! Tenho interesse em "${a.title}" (vi no site do Bloco do Beco).`);
           const dow = getActivityDayOfWeek(a, today);
           return (
             <motion.article
@@ -172,17 +151,19 @@ export default function Activities() {
               <div className="mt-3 space-y-1 text-sm text-stone-600">
                 {a.date ? (
                   <p className="flex items-center gap-1.5 font-semibold text-stone-800" data-testid={`activity-date-${a.id}`}>
-                    <CalendarDays className="size-4 text-[#0D9488]" /> {formatDate(a.date)}{a.date === today && <span className="rounded-full bg-[#FACC15] px-2 py-0.5 text-[10px] uppercase">Hoje</span>}
+                    <CalendarDays className="size-4 text-[#0D9488]" /> {formatDateActivity(a.date, a.schedule).dateDisplay}{a.date === today && <span className="rounded-full bg-[#FACC15] px-2 py-0.5 text-[10px] uppercase ml-1">Hoje</span>}
                   </p>
+                ) : a.weekdays && a.weekdays.length > 0 ? (
+                  <>
+                    <p className="flex items-center gap-1.5 font-semibold text-stone-800"><Repeat className="size-4 text-[#0D9488]" /> {a.weekdays.map((w) => WEEKDAY_LABELS[w]).join(", ")}</p>
+                    {a.schedule && <p className="flex items-center gap-1.5"><CalendarClock className="size-4 text-[#E65100]" /> {a.schedule}</p>}
+                  </>
                 ) : (
-                  <p className="flex items-center gap-1.5"><Repeat className="size-4 text-[#0D9488]" /> Recorrente</p>
+                  <>
+                    <p className="flex items-center gap-1.5 font-semibold text-stone-800"><Repeat className="size-4 text-[#0D9488]" /> Recorrente</p>
+                    <p className="flex items-center gap-1.5"><CalendarClock className="size-4 text-[#E65100]" /> {a.schedule || "Horário a combinar"}</p>
+                  </>
                 )}
-                {dow !== null && (
-                  <p className="flex items-center gap-1.5 text-stone-700">
-                    <Calendar className="size-4 text-[#E65100]" /> {DAY_LABELS[dow]}
-                  </p>
-                )}
-                <p className="flex items-center gap-1.5"><CalendarClock className="size-4 text-[#E65100]" /> {a.schedule || "Horário a combinar"}</p>
                 <p className="flex items-center gap-1.5"><MapPin className="size-4 text-[#E65100]" /> {a.address}</p>
               </div>
               <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-amber-900/10 pt-4">
@@ -193,11 +174,9 @@ export default function Activities() {
                     <CategoryBadge category={a.talent_category} className="mt-0.5 px-2 py-0.5 text-[10px]" />
                   </span>
                 </Link>
-                {wa && (
-                  <a href={wa} target="_blank" rel="noreferrer" data-testid={`activity-whatsapp-${a.id}`} className={cn(buttonVariants({ size: "sm" }), "bg-[#16A34A] text-white hover:bg-[#15803D]")}>
-                    <MessageCircle className="size-4" /> Quero participar
-                  </a>
-                )}
+                <Link to={`/talento/${a.talent_id}`} className={cn(buttonVariants({ size: "sm" }), "bg-[#16A34A] text-white hover:bg-[#15803D]")} data-testid={`activity-participate-${a.id}`}>
+                  Quero participar
+                </Link>
               </div>
             </motion.article>
           );

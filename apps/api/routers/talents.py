@@ -23,7 +23,9 @@ from models.talent import (
     Talent,
     TalentInput,
     TodayResponse,
+    birth_date_to_age_range,
 )
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -41,7 +43,8 @@ def to_talent(doc: dict) -> Talent:
 
 def present(t: Talent, p: Principal) -> Talent:
     """Field-level: owner_email is visible to admins only."""
-    return t if p.is_admin else t.model_copy(update={"owner_email": ""})
+    is_owner = bool(p.user and t.owner_id == p.user.user_id)
+    return t.model_copy(update={"owner_email": "" if not p.is_admin else t.owner_email, "is_owner": is_owner})
 
 
 async def all_talents(filt: Optional[dict] = None) -> list[Talent]:
@@ -85,6 +88,12 @@ async def get_talent(talent_id: str, p: Principal = Depends(get_principal)):
 @router.post("/talents", response_model=Talent, status_code=201)
 async def create_talent(payload: TalentInput, p: Principal = Depends(require_user)):
     assert p.user
+    # Each user can only have one talent profile
+    existing = await db.talents.find_one({"owner_id": p.user.user_id})
+    if existing:
+        raise HTTPException(status_code=409, detail="Você já possui um perfil de talento cadastrado.")
+    if payload.birth_date and not payload.age_range:
+        payload.age_range = birth_date_to_age_range(payload.birth_date)
     lat, lng = await resolve_coords(payload.address, payload.lat, payload.lng)
     talent = Talent(
         **payload.model_dump(exclude={"lat", "lng"}),
@@ -95,6 +104,12 @@ async def create_talent(payload: TalentInput, p: Principal = Depends(require_use
         owner_email=p.user.email,
     )
     await db.talents.insert_one(talent.model_dump())
+    # Legacy: sync talent phone to user phones list
+    if payload.phone:
+        await db.users.update_one(
+            {"user_id": p.user.user_id},
+            {"$addToSet": {"phones": payload.phone}},
+        )
     return present(talent, p)
 
 
@@ -108,6 +123,8 @@ async def my_talents(p: Principal = Depends(require_user)):
 async def update_talent(talent_id: str, payload: TalentInput, p: Principal = Depends(get_principal)):
     existing = await load(talent_id)
     authorize(p, "update", existing)
+    if payload.birth_date and not payload.age_range:
+        payload.age_range = birth_date_to_age_range(payload.birth_date)
     current = to_talent(existing)
     lat, lng = await resolve_coords(payload.address, payload.lat, payload.lng)
     # A rejected profile edited by its owner goes back to the approval queue.
@@ -123,6 +140,12 @@ async def update_talent(talent_id: str, payload: TalentInput, p: Principal = Dep
         created_at=current.created_at,
     )
     await db.talents.replace_one({"id": talent_id}, updated.model_dump())
+    # Legacy: sync talent phone to user phones list
+    if p.user and current.owner_id == p.user.user_id and payload.phone:
+        await db.users.update_one(
+            {"user_id": p.user.user_id},
+            {"$addToSet": {"phones": payload.phone}},
+        )
     return present(updated, p)
 
 
@@ -215,3 +238,46 @@ async def compute_stats() -> Stats:
 @router.get("/stats", response_model=Stats, dependencies=[Depends(require_admin)])
 async def get_stats():
     return await compute_stats()
+
+
+# ---- public participant counts -----------------------------------------------
+class ActivityParticipantCount(BaseModel):
+    activity_id: str
+    activity_title: str
+    participant_count: int
+
+
+class TalentParticipantCounts(BaseModel):
+    talent_id: str
+    activities: list[ActivityParticipantCount]
+
+
+@router.get("/talents/{talent_id}/participants-count", response_model=TalentParticipantCounts)
+async def get_talent_participant_counts(talent_id: str):
+    """Public endpoint: returns participant counts per activity (no personal data)."""
+    doc = await load(talent_id)
+    
+    activities = doc.get("activities", [])
+    activity_ids = {a.get("id") for a in activities if a.get("id")}
+    
+    # Count participations per activity
+    counts: dict[str, int] = {}
+    async for p in db.participations.find({"talent_id": talent_id}):
+        aid = p.get("activity_id", "")
+        if aid in activity_ids:
+            counts[aid] = counts.get(aid, 0) + 1
+    
+    activity_counts = [
+        ActivityParticipantCount(
+            activity_id=aid,
+            activity_title=next((a.get("title", "") for a in activities if a.get("id") == aid), ""),
+            participant_count=counts.get(aid, 0),
+        )
+        for aid in activity_ids
+        if counts.get(aid, 0) > 0
+    ]
+    
+    return TalentParticipantCounts(
+        talent_id=talent_id,
+        activities=activity_counts,
+    )

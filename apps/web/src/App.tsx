@@ -9,6 +9,8 @@ import MapPage from "@/pages/MapPage";
 import Register from "@/pages/Register";
 import Login from "@/pages/Login";
 import MyProfiles from "@/pages/MyProfiles";
+import Participants from "@/pages/Participants";
+import Participantes from "@/pages/Participantes";
 import Admin from "@/pages/Admin";
 import AdminLogin from "@/pages/AdminLogin";
 import NotFound from "@/pages/NotFound";
@@ -28,8 +30,9 @@ export default function App() {
         <Route path="/mapa" element={<MapPage />} />
         <Route path="/cadastrar" element={<Register />} />
         <Route path="/entrar" element={<Login />} />
-        <Route path="/perfil" element={<MyProfiles />} />
         <Route path="/meus-perfis" element={<MyProfiles />} />
+        <Route path="/meus-perfis/:id/participantes" element={<Participants />} />
+        <Route path="/participantes" element={<Participantes />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="*" element={<NotFound />} />

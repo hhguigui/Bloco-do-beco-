@@ -35,7 +35,7 @@ export default function AiAssistant() {
       <div className="relative grid gap-8 lg:grid-cols-[1fr_1.2fr]">
         <div className="space-y-4">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 font-mono text-[11px] uppercase tracking-wider text-[#FACC15]">
-            <Sparkles className="size-3.5" /> Assistente com IA · Claude
+            <Sparkles className="size-3.5" /> Assistente com
           </span>
           <h2 className="font-heading text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl">
             Encontre um talento do bairro.

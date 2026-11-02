@@ -13,7 +13,7 @@ export default defineConfig({
   ],
   use: {
     // farm-ts: localhost — Vite proxies /api to FastAPI; the external preview host is not in-pod routable.
-    baseURL: 'http://localhost:3000',
+    baseURL: 'http://localhost:3001',
     screenshot: 'on',
     trace: 'on-first-retry',
     headless: true,

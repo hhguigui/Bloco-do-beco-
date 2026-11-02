@@ -17,6 +17,8 @@ class User(BaseModel):
     email: str
     name: str
     picture: str = ""
+    role: str = "customer"  # "customer" or "talent"
+    phones: list[str] = Field(default_factory=list)  # Multiple contact phones
 
 
 class Me(BaseModel):

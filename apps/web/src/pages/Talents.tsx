@@ -35,7 +35,7 @@ export default function Talents() {
     <div className="mx-auto max-w-7xl px-4 py-12 sm:px-8">
       <p className="font-mono text-xs uppercase tracking-[0.2em] text-[#C2410C]">Catálogo</p>
       <h1 className="mt-2 font-heading text-4xl font-extrabold tracking-tight sm:text-5xl">Talentos do Jardim Ibirapuera</h1>
-      <p className="mt-3 max-w-2xl text-stone-600">Busque por nome ou atividade e refine em cascata: categoria → tipo → valor → talento.</p>
+      <p className="mt-3 max-w-2xl text-stone-600">Busque por nome ou atividade.</p>
 
       <div className="flex flex-wrap items-end gap-5 z-30 -mx-4 mt-8 border-b border-amber-900/10 bg-[#FDFBF7]/90 px-4 py-4 backdrop-blur sm:-mx-8 sm:px-8">
         <div className="relative flex-1 min-w-[200px]">

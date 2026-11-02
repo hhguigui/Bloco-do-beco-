@@ -35,6 +35,15 @@ INDEXES: dict[str, list[IndexModel]] = {
         IndexModel([("session_token", ASCENDING)], name="session_token", unique=True),
         IndexModel([("expires_at", ASCENDING)], name="expires_ttl", expireAfterSeconds=0),
     ],
+    "reports": [
+        IndexModel([("talent_id", ASCENDING), ("created_at", DESCENDING)], name="talent_reports"),
+    ],
+    "observations": [
+        IndexModel([("talent_id", ASCENDING), ("created_at", DESCENDING)], name="talent_obs"),
+    ],
+    "participations": [
+        IndexModel([("talent_id", ASCENDING), ("activity_id", ASCENDING)], name="activity_participations"),
+    ],
     "ai_logs": [IndexModel([("created_at", DESCENDING)], name="created_desc")],
 }
 

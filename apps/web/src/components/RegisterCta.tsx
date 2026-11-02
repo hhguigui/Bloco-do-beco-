@@ -8,7 +8,7 @@ export default function RegisterCta({ className, testId, children }: { className
   const signedIn = !me.isError && !!me.data?.user;
   if (signedIn) {
     return (
-      <Link to="/cadastrar" className={className} data-testid={testId}>
+      <Link to="/meus-perfis" className={className} data-testid={testId}>
         {children}
       </Link>
     );

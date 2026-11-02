@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Pencil, Trash2 } from "lucide-react";
+import { Eye, Loader2, Pencil, Phone, Plus, Trash2, UserCog, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -8,13 +8,15 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import CategoryBadge from "@/components/CategoryBadge";
 import GoogleSignInCard from "@/components/GoogleSignInCard";
 import StatusBadge from "@/components/StatusBadge";
-import TalentForm, { SectionTitle } from "@/components/TalentForm";
-import UserAvatar from "@/components/UserAvatar";
-import { apiDelete, apiGet, apiPost, apiPut, errorMessage } from "@/lib/api";
-import { useMe } from "@/lib/auth";
-import { toInput, initials } from "@/lib/catalog";
-import type { Talent, TalentInput } from "@/lib/types";
+import TalentForm from "@/components/TalentForm";
+import ActivityForm from "@/components/ActivityForm";
+import { apiDelete, apiGet, apiPatch, apiPut, errorMessage } from "@/lib/api";
+import { ME_KEY, useMe } from "@/lib/auth";
+import { toInput } from "@/lib/catalog";
+import type { Me, Talent, TalentInput } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function MyProfiles() {
   const qc = useQueryClient();
@@ -24,15 +26,37 @@ export default function MyProfiles() {
   const list = mine.isError ? [] : (mine.data ?? []);
   const [editing, setEditing] = useState<Talent | null>(null);
   const [deleting, setDeleting] = useState<Talent | null>(null);
+  const [updatingRole, setUpdatingRole] = useState(false);
+  const [editingActivities, setEditingActivities] = useState<string | null>(null);
+  const [activitiesPending, setActivitiesPending] = useState(false);
 
   const refresh = (id: string) => {
     for (const key of ["my-talents", "talents", "activities", "summary", "admin-talents"]) void qc.invalidateQueries({ queryKey: [key] });
     void qc.invalidateQueries({ queryKey: ["talent", id] });
+    void qc.invalidateQueries({ queryKey: ["auth", "me"] });
   };
+
+  const changeRole = useMutation({
+    mutationFn: (role: string) => apiPatch<Me>("/auth/me/role", { role }),
+    onMutate: () => setUpdatingRole(true),
+    onSuccess: (_data, role) => {
+      toast.success(role === "talent" ? "Agora você é talento." : "Agora você é cliente.");
+      refresh("");
+    },
+    onError: (err) => {
+      toast.error(errorMessage(err));
+      setUpdatingRole(false);
+    },
+  });
 
   const update = useMutation({
     mutationFn: ({ id, values }: { id: string; values: TalentInput }) => apiPut<Talent>(`/talents/${id}`, values),
     onSuccess: (t) => { refresh(t.id); setEditing(null); toast.success("Perfil atualizado."); },
+    onError: (err) => toast.error(errorMessage(err)),
+  });
+  const addActivity = useMutation({
+    mutationFn: ({ id, activity }: { id: string; activity: any }) => apiPatch<Talent>(`/talents/${id}/activities`, { activity }),
+    onSuccess: (t) => { refresh(t.id); toast.success("Atividade adicionada."); },
     onError: (err) => toast.error(errorMessage(err)),
   });
   const remove = useMutation({
@@ -42,127 +66,182 @@ export default function MyProfiles() {
   });
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-12 sm:px-8">
+    <div className="mx-auto max-w-5xl px-4 py-12 sm:px-8">
       <p className="font-mono text-xs uppercase tracking-[0.2em] text-[#C2410C]">Minha conta</p>
-      <h1 className="mt-2 font-heading text-4xl font-extrabold tracking-tight">Meu perfil</h1>
+      <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
+        <h1 className="font-heading text-4xl font-extrabold tracking-tight">Meus perfis</h1>
+        {user && list.length > 0 && (
+          <p className="text-sm text-stone-500">Seus talentos cadastrados</p>
+        )}
+      </div>
 
       <div className="mt-8">
         {me.isLoading ? (
-          <div className="h-96 animate-pulse rounded-3xl bg-[#FAF5EE]" />
+          <div className="h-60 animate-pulse rounded-3xl bg-[#FAF5EE]" />
         ) : !user ? (
-          <GoogleSignInCard returnPath="/perfil" title="Entre para ver seu perfil" text="Acompanhe a aprovação e edite os talentos que você cadastrou." />
+          <GoogleSignInCard returnPath="/meus-perfis" title="Entre para ver seus perfis" text="Acompanhe a aprovação e edite os talentos que você cadastrou." />
         ) : (
-          <div className="grid gap-8 lg:grid-cols-[320px_1fr]">
-            {/* Sidebar — User Profile */}
-            <aside className="lg:sticky lg:top-24 lg:self-start">
-              <div className="rounded-3xl border border-amber-900/10 bg-white p-6 shadow-[0_30px_60px_-40px_rgba(120,53,15,0.4)] sm:p-10">
-                <div className="flex items-start gap-4">
-                  <UserAvatar
-                    name={user.name}
-                    picture={user.picture}
-                    className="size-20 rounded-2xl"
-                    fallbackClassName="text-2xl"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-heading text-xl font-bold truncate">{user.name}</p>
-                    <p className="mt-1 text-sm text-stone-500 truncate">{user.email}</p>
+          <div className="space-y-4" data-testid="my-profiles-list">
+            {list.map((t) => (
+              <div key={t.id} className="flex flex-col gap-4 rounded-2xl border border-amber-900/10 bg-white p-4 sm:flex-row sm:items-center" data-testid={`my-profile-${t.id}`}>
+                {t.photo ? <img src={t.photo} alt="" className="size-16 rounded-xl object-cover" /> : <span className="size-16 rounded-xl bg-[#FAF5EE]" />}
+                <div className="flex-1 space-y-1.5">
+                  <p className="font-heading text-lg font-bold">{t.name}</p>
+                  <div className="flex flex-wrap gap-2">
+                    <StatusBadge status={t.status} />
+                    <CategoryBadge category={t.category} />
                   </div>
+                  {t.status === "pending" && <p className="text-sm text-stone-500">Em análise pela equipe. Você será publicado assim que for aprovado.</p>}
+                  {t.status === "rejected" && <p className="text-sm text-red-700">Não aprovado. Revise as informações e salve para reenviar.</p>}
                 </div>
-                <div className="mt-6 border-t border-amber-900/10 pt-6">
-                  {list.length === 0 ? (
-                    <div className="space-y-3">
-                      <p className="text-sm text-stone-600">Você ainda não cadastrou nenhum talento.</p>
-                      <Button
-                        className="w-full bg-[#E65100] text-white hover:bg-[#C2410C]"
-                        onClick={() => window.location.href = "/perfil"}
-                        data-testid="complete-profile-button"
-                      >
-                        Completar cadastro
-                      </Button>
-                    </div>
-                  ) : (
-                    <p className="text-sm font-semibold text-stone-900">
-                      {list.length} talento{list.length > 1 ? "s" : ""} cadastrad{list.length > 1 ? "os" : "o"}
-                      {list.some(t => t.status === "pending") && " • Em análise"}
-                      {list.some(t => t.status === "rejected") && " • Precisa revisão"}
-                    </p>
-                  )}
-                  {list.length > 0 && (
-                    <div className="mt-4 space-y-3" data-testid="my-profiles-list">
-                      {list.map((t) => (
-                        <div key={t.id} className="flex flex-col gap-2 rounded-xl border border-amber-900/10 bg-white p-3 sm:flex-row sm:items-center" data-testid={`my-profile-${t.id}`}>
-                          {t.photo ? <img src={t.photo} alt="" className="size-12 rounded-lg object-cover" /> : <span className="size-12 rounded-lg bg-[#FAF5EE]" />}
-                          <div className="flex-1 space-y-1">
-                            <p className="font-heading text-sm font-bold truncate">{t.name}</p>
-                            <div className="flex flex-wrap gap-1.5">
-                              <StatusBadge status={t.status} />
-                              <CategoryBadge category={t.category} />
-                            </div>
-                          </div>
-                          <div className="flex gap-1">
-                            <Link to={`/talento/${t.id}`} className={buttonVariants({ variant: "ghost", size: "icon-sm" })} aria-label="Ver" data-testid={`my-profile-view-${t.id}`}>
-                              <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                            </Link>
-                            <Button variant="ghost" size="icon-sm" aria-label="Editar" onClick={() => setEditing(t)} data-testid={`my-profile-edit-${t.id}`}>
-                              <Pencil className="size-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon-sm" aria-label="Excluir" onClick={() => setDeleting(t)} className="text-red-600" data-testid={`my-profile-delete-${t.id}`}>
-                              <Trash2 className="size-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                <div className="flex gap-1 flex-wrap">
+                  <Link to={`/talento/${t.id}`} className={buttonVariants({ variant: "ghost", size: "icon-sm" })} aria-label="Ver" data-testid={`my-profile-view-${t.id}`}><Eye className="size-4" /></Link>
+                  <Link to={`/meus-perfis/${t.id}/participantes`} className={buttonVariants({ variant: "ghost", size: "icon-sm" })} aria-label="Ver inscritos" data-testid={`my-profile-participants-${t.id}`}><Users className="size-4" /></Link>
+                  <Button variant="ghost" size="icon-sm" aria-label="Editar" onClick={() => setEditing(t)} data-testid={`my-profile-edit-${t.id}`}><Pencil className="size-4" /></Button>
+                  <Button variant="ghost" size="icon-sm" aria-label="Excluir" onClick={() => setDeleting(t)} className="text-red-600" data-testid={`my-profile-delete-${t.id}`}><Trash2 className="size-4" /></Button>
                 </div>
               </div>
-            </aside>
-
-            {/* Main — Talent Form */}
-            <div>
-              <div className="rounded-3xl border border-amber-900/10 bg-white p-6 shadow-[0_30px_60px_-40px_rgba(120,53,15,0.4)] sm:p-10">
-                {editing ? (
-                  <>
-                    <div className="flex items-center justify-between gap-4 mb-6">
-                      <div>
-                        <p className="font-mono text-xs uppercase tracking-[0.2em] text-[#C2410C]">Editar talento</p>
-                        <h2 className="mt-1 font-heading text-2xl font-extrabold">Editar <span className="text-[#E65100]">{editing.name}</span></h2>
-                      </div>
-                      <Button variant="ghost" size="sm" onClick={() => setEditing(null)} className="border-stone-300 text-stone-700 hover:bg-stone-100">
-                        Cancelar
-                      </Button>
-                    </div>
-                    <SectionTitle n="04" title="Atividades oferecidas ao bairro" hint="Atualize as oficinas, aulas, serviços ou apresentações do seu perfil." />
-                    <TalentForm
-                      key={editing.id}
-                      initial={toInput(editing)}
-                      submitLabel="Salvar alterações"
-                      pending={update.isPending}
-                      onSubmit={(values) => update.mutate({ id: editing.id, values })}
-                      activitiesOnly={true}
-                    />
-                  </>
-                ) : (
-                  <TalentForm
-                    key={`new-${user.user_id}`}
-                    prefill={{ name: user.name, photo: user.picture }}
-                    submitLabel="Enviar para aprovação"
-                    pending={false}
-                    onSubmit={(values) => {
-                      apiPost<Talent>("/talents", values)
-                        .then((t) => {
-                          refresh(t.id);
-                          toast.success("Perfil enviado! A equipe vai revisar e aprovar em breve.");
-                        })
-                        .catch((err) => toast.error(errorMessage(err)));
-                    }}
-                  />
-                )}
+            ))}
+            {list.length === 0 && !mine.isLoading && (
+              <div className="rounded-2xl border border-dashed border-amber-900/20 p-10 text-center text-stone-500" data-testid="my-profiles-empty">
+                {user?.role === "talent"
+                  ? <>Você ainda não finalizou seu perfil de talento. <Link to="/cadastrar" className="font-semibold text-[#C2410C] underline">Finalizar perfil</Link></>
+                  : <>Faça login com Google e escolha o perfil de <strong>talento</strong> para começar a cadastrar atividades.</>}
               </div>
-            </div>
+            )}
           </div>
         )}
       </div>
+      {/* Activities management */}
+      {user && list.length > 0 && (
+        <div className="mt-8 rounded-2xl border border-amber-900/10 bg-white p-5">
+          <div className="flex items-center gap-2">
+            <Plus className="size-5 text-stone-600" />
+            <h2 className="font-heading text-lg font-bold">Gerenciar atividades</h2>
+          </div>
+          <p className="mt-2 text-sm text-stone-600">
+            Adicione, edite ou remova as atividades de cada talento.
+          </p>
+          <div className="mt-4 space-y-2">
+            {list.map((t) => (
+              <div key={t.id} className="flex items-center justify-between rounded-xl bg-[#FAF5EE] px-4 py-3">
+                <div className="flex items-center gap-3">
+                  {t.photo ? <img src={t.photo} alt="" className="size-8 rounded-full object-cover" /> : <span className="size-8 rounded-full bg-white" />}
+                  <div>
+                    <p className="font-semibold text-stone-800 text-sm">{t.name}</p>
+                    <p className="text-xs text-stone-500">{t.activities.length} atividade{t.activities.length !== 1 ? "s" : ""}</p>
+                  </div>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => setEditingActivities(t.id)} data-testid={`my-profile-activity-${t.id}`}>
+                  <Plus className="size-4 mr-1" /> Gerenciar
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {/* Phone section */}
+      {user && (
+        <div className="mt-4 rounded-2xl border border-amber-900/10 bg-white p-5">
+          <div className="flex items-center gap-2">
+            <Phone className="size-5 text-stone-600" />
+            <h2 className="font-heading text-lg font-bold">Telefones de contato</h2>
+          </div>
+          <p className="mt-2 text-sm text-stone-600">
+            Adicione um ou mais telefones. O primeiro será usado nas inscrições, mas você pode gerenciar todos aqui.
+          </p>
+          <PhonesManager initialPhones={user.phones ?? []} />
+        </div>
+      )}
+
+
+      {/* Role selector */}
+      {user && (
+        <div className="mt-8 rounded-2xl border border-amber-900/10 bg-white p-5">
+          <div className="flex items-center gap-2">
+            <UserCog className="size-5 text-stone-600" />
+            <h2 className="font-heading text-lg font-bold">Seu perfil na comunidade</h2>
+          </div>
+          <p className="mt-2 text-sm text-stone-600">
+            Você pode participar como <strong>cliente</strong> (apenas visualizar atividades) ou como <strong>talento</strong> (cadastrar e gerenciar suas atividades).
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => changeRole.mutate("talent")}
+              disabled={updatingRole || user.role === "talent"}
+              className={cn(
+                buttonVariants({ size: "sm" }),
+                user.role === "talent"
+                  ? "bg-[#16A34A] text-white cursor-default"
+                  : "bg-[#16A34A] text-white hover:bg-[#15803D]"
+              )}
+              data-testid="role-select-talent"
+            >
+              {user.role === "talent" ? "Talento" : "Seja talento"}
+            </button>
+            <button
+              type="button"
+              onClick={() => changeRole.mutate("customer")}
+              disabled={updatingRole || user.role === "customer"}
+              className={cn(
+                buttonVariants({ size: "sm", variant: "outline" }),
+                user.role === "customer" && "border-stone-900 bg-stone-900 text-white"
+              )}
+              data-testid="role-select-customer"
+            >
+              {user.role === "customer" ? "Cliente" : "Seja cliente"}
+            </button>
+          </div>
+        </div>
+      )}
+
+
+      {/* Activity dialog */}
+      <Dialog open={!!editingActivities} onOpenChange={(o) => !o && setEditingActivities(null)}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto bg-[#FDFBF7] sm:max-w-2xl" data-testid="my-profile-activity-dialog">
+          <DialogHeader>
+            <DialogTitle className="font-heading text-xl">Gerenciar atividades</DialogTitle>
+            <DialogDescription>Adicione ou edite as atividades do seu talento.</DialogDescription>
+          </DialogHeader>
+          {editingActivities && (() => {
+            const talent = list.find((t) => t.id === editingActivities);
+            if (!talent) return null;
+            return (
+              <ActivityForm
+                key={editingActivities}
+                initialActivities={talent.activities}
+                pending={activitiesPending}
+                onSubmit={async (activities) => {
+                  setActivitiesPending(true);
+                  try {
+                    await apiPut<Talent>(`/talents/${editingActivities}`, { ...toInput(talent), activities });
+                    toast.success("Atividades salvas com sucesso!");
+                    setEditingActivities(null);
+                    refresh("");
+                  } catch (err) {
+                    toast.error(errorMessage(err));
+                  } finally {
+                    setActivitiesPending(false);
+                  }
+                }}
+              />
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto bg-[#FDFBF7] sm:max-w-3xl" data-testid="my-profile-edit-dialog">
+          <DialogHeader>
+            <DialogTitle className="font-heading text-xl">Editar {editing?.name}</DialogTitle>
+            <DialogDescription>Perfis recusados voltam para a fila de aprovação ao salvar.</DialogDescription>
+          </DialogHeader>
+          {editing && (
+            <TalentForm key={editing.id} initial={toInput(editing)} submitLabel="Salvar alterações" pending={update.isPending} onSubmit={(values) => update.mutate({ id: editing.id, values })} />
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
         <DialogContent data-testid="my-profile-delete-dialog">
@@ -178,6 +257,102 @@ export default function MyProfiles() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+function PhonesManager({ initialPhones }: { initialPhones: string[] }) {
+  const [newPhone, setNewPhone] = useState("");
+  const [saving, setSaving] = useState(false);
+  const qc = useQueryClient();
+  const me = useMe();
+  const user = me.isError ? null : (me.data?.user ?? null);
+  const [phones, setPhones] = useState<string[]>(initialPhones);
+
+  const addPhone = async () => {
+    const trimmed = newPhone.trim();
+    if (!trimmed || trimmed.length < 10) {
+      toast.error("Telefone deve ter pelo menos 10 dígitos.");
+      return;
+    }
+    if (phones.includes(trimmed)) {
+      toast.error("Este telefone já está cadastrado.");
+      return;
+    }
+    setSaving(true);
+    try {
+      await apiPatch("/auth/me/phone", { action: "add", phone: trimmed });
+      setPhones((prev) => [...prev, trimmed]);
+      setNewPhone("");
+      toast.success("Telefone adicionado!");
+      void qc.invalidateQueries({ queryKey: ["auth", "me"] });
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail || "Não foi possível adicionar o telefone.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const removePhone = async (phone: string) => {
+    setSaving(true);
+    try {
+      await apiPatch("/auth/me/phone", { action: "remove", phone });
+      setPhones((prev) => prev.filter((p) => p !== phone));
+      toast.success("Telefone removido.");
+      void qc.invalidateQueries({ queryKey: ["auth", "me"] });
+    } catch (err: any) {
+      toast.error("Não foi possível remover o telefone.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!user) return null;
+
+  return (
+    <div className="mt-4 space-y-3">
+      {phones.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-stone-500 uppercase tracking-wider">Seus telefones</p>
+          <div className="space-y-1">
+            {phones.map((p, i) => (
+              <div key={p} className="flex items-center gap-2 rounded-lg bg-[#FAF5EE] px-3 py-2">
+                <Phone className="size-4 text-stone-400" />
+                <span className="flex-1 text-sm text-stone-700">{p}</span>
+                {i === 0 && <span className="text-[10px] font-medium text-[#16A34A]">principal</span>}
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={() => removePhone(p)}
+                  disabled={saving}
+                  className="size-6 text-stone-400 hover:text-red-500"
+                >
+                  <Trash2 className="size-3" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      <div className="flex gap-2">
+        <Input
+          value={newPhone}
+          onChange={(e) => setNewPhone(e.target.value)}
+          placeholder="(XX) XXXXX-XXXX"
+          className="flex-1"
+        />
+        <Button
+          onClick={addPhone}
+          disabled={saving || newPhone.trim().length < 10}
+          className="bg-[#16A34A] text-white hover:bg-[#15803D]"
+        >
+          <Plus className="size-4 mr-1" />
+          Adicionar
+        </Button>
+      </div>
+      {phones.length === 0 && (
+        <p className="text-xs text-stone-400 italic">Nenhum telefone cadastrado ainda.</p>
+      )}
     </div>
   );
 }

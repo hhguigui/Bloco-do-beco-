@@ -13,7 +13,7 @@ load_dotenv(ROOT_DIR / '.env')
 
 # MongoDB connection
 from lib.db import client, ensure_indexes  # noqa: E402
-from routers import ai, auth, talents  # noqa: E402
+from routers import ai, auth, talents, cep, management  # noqa: E402
 
 
 @asynccontextmanager
@@ -36,6 +36,8 @@ async def root():
 api_router.include_router(talents.router)
 api_router.include_router(auth.router)
 api_router.include_router(ai.router)
+api_router.include_router(cep.router, prefix="/geocode")
+api_router.include_router(management.router)
 
 app.add_middleware(
     CORSMiddleware,
